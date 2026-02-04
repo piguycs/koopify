@@ -1,0 +1,5 @@
+# stupid stuff that frontend devs decided they need
+tsconfig.app.json
+tsconfig.json
+tsconfig.node.json
+vite.config.ts

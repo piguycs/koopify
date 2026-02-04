@@ -1,0 +1,13 @@
+# generate the `internal/db` module's files using sqlc
+# internal/db will be commited to the repo, so sqlc is not needed to compile
+
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "sql/queries.sql"
+    schema: "sql/schema.sql"
+    gen:
+      go:
+        package: "db"
+        out: "internal/db"
+        sql_package: "pgx/v5"
