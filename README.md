@@ -1,11 +1,13 @@
 # Koopify
 
-## Development
+A sassy little web app to transfer funds from your wallet to mine and transfer snake oil from my non-existant inventory to yours!
 
-Basic development information:
+This is a university project, I will try to keep things simple while also over-engineering where possible. The backend is in Go, and the frontend a SPA website written in Vue and Typescript which is transpiled to Javascript which generates HTML after reading JSON which is fetched after making a request to the backend. Could I have just sent the final JSON to the client along with some alpine or htmx code? No, because Vue is required for a passing grade.
 
-Protobuf files are used to define the API schema, these files generate Go structs for the backend and TS interfaces for the frontend. This provides a type-safe bridge to communicate between the frontend and the backend. A HTTP+JSON API is used for the actual communications, as using protobuf is probably not allowed.
+## Deployments
 
-The app is fully containerised for easy deployment on kubernetes, openshift or any other platform which supports OCI containers. For local development, podman or docker can be used. For orchestration, docker-compose is used.
+CI/CD is setup to automatically build container images and publish them to the GitHub Container Registry. Server-side, `podman auto-update` is used for continuous delivery. Zero-downtime is not guranteed in the current setup, as only one node is used with no orchestrator.
 
-The frontend uses Vue.js v3 and is an SPA. The backend uses Go, and the database in use is a postgresql database. sqlc is used as the ORM of choice.
+## Local development
+
+TODO. Probably going to be docker-compose, so it works with most popular OCI runtimes like podman (sorry lxc).
