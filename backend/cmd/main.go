@@ -8,8 +8,9 @@ import (
 )
 
 type SimpleJsonData = struct {
-	Hello string `json:"hello"`
-	Foo   string `json:"foo"`
+	Hello      string `json:"hello"`
+	Foo        string `json:"foo"`
+	ApiVersion int    `json:"apiVersion"`
 }
 
 func main() {
@@ -18,7 +19,11 @@ func main() {
 	e.Use(middleware.RequestLogger())
 
 	e.GET("/hello-world", func(c *echo.Context) error {
-		return c.JSON(http.StatusOK, SimpleJsonData{Hello: "world", Foo: "bar"})
+		return c.JSON(http.StatusOK, SimpleJsonData{
+			Hello:      "world",
+			Foo:        "bar",
+			ApiVersion: 2,
+		})
 	})
 
 	if err := e.Start(":8080"); err != nil {
