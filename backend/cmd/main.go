@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"net/http"
 	"os"
 
@@ -20,43 +21,42 @@ func main() {
 		return c.String(http.StatusOK, CommitHash)
 	})
 
-	cert, key, err := TlsConfig()
+	tlsConfig, err := TlsConfig()
 	if err != nil {
-		e.Logger.Error("failed to get tls config, probably TLS_CERT or TLS_KEY is unset", "error", err)
+		e.Logger.Error("failed to load TLS", "error", err)
 	}
 
-	context := context.Background()
-	sc := echo.StartConfig{
-		Address: ":8080",
-	}
-
-	if cert != nil && key != nil {
+	sc := echo.StartConfig{Address: ":8080", TLSConfig: tlsConfig}
+	if tlsConfig != nil {
 		e.Logger.Info("starting server with TLS :)")
-		if err := sc.StartTLS(context, e, *cert, *key); err != nil {
-			e.Logger.Error("failed to start server", "error", err)
-		}
+		sc.TLSConfig = tlsConfig
 	} else {
 		e.Logger.Info("starting server without TLS :(")
-		if err := sc.Start(context, e); err != nil {
-			e.Logger.Error("failed to start server", "error", err)
-		}
 	}
 
+	if err := sc.Start(context.Background(), e); err != nil {
+		e.Logger.Error("failed to start server", "error", err)
+	}
 }
 
-func TlsConfig() (cert *string, key *string, err error) {
-	tlsEnabled := os.Getenv("TLS_ENABLED")
-	tlsCert := os.Getenv("TLS_CERT")
-	tlsKey := os.Getenv("TLS_KEY")
-
-	// TLS_ENABLED=1 means it is enabled, unset or 0 means it is not. Anything above 0 is true
-	if tlsEnabled == "" || tlsEnabled == "0" {
-		return nil, nil, nil
+func TlsConfig() (*tls.Config, error) {
+	if os.Getenv("TLS_ENABLED") == "" || os.Getenv("TLS_ENABLED") == "0" {
+		return nil, nil
 	}
 
-	if tlsCert == "" || tlsKey == "" {
-		return nil, nil, os.ErrNotExist
+	certPEM, err := os.ReadFile(os.Getenv("TLS_CERT"))
+	if err != nil {
+		return nil, err
+	}
+	keyPEM, err := os.ReadFile(os.Getenv("TLS_KEY"))
+	if err != nil {
+		return nil, err
 	}
 
-	return &tlsCert, &tlsKey, nil
+	cert, err := tls.X509KeyPair(certPEM, keyPEM)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tls.Config{Certificates: []tls.Certificate{cert}}, nil
 }
