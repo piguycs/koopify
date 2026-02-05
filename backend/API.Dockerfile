@@ -14,8 +14,8 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
     go build -o main ./cmd
 
+COPY /build/main /main
 
-FROM scratch
-COPY --from=build /build/main /main
 EXPOSE 8080
+
 CMD ["/main"]
