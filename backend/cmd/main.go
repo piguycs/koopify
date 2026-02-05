@@ -32,7 +32,7 @@ func main() {
 
 	if cert != nil && key != nil {
 		e.Logger.Info("starting server with TLS :)")
-		if err := sc.StartTLS(context, e, cert, key); err != nil {
+		if err := sc.StartTLS(context, e, *cert, *key); err != nil {
 			e.Logger.Error("failed to start server", "error", err)
 		}
 	} else {
