@@ -33,12 +33,15 @@ jobs:
       - name: Build and push ${{ matrix.image.name }}
         uses: docker/build-push-action@v6
         with:
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           context: ${{ matrix.image.context }}
           file: ${{ matrix.image.dockerfile }}
           push: true
           tags: |
             ghcr.io/${{ github.repository }}-${{ matrix.image.name }}:latest
             ghcr.io/${{ github.repository }}-${{ matrix.image.name }}:${{ github.sha }}
+
   deploy:
       runs-on: ubuntu-latest
       needs: build-and-push

@@ -22,7 +22,7 @@ func main() {
 		return c.JSON(http.StatusOK, SimpleJsonData{
 			Hello:      "world",
 			Foo:        "bar",
-			ApiVersion: 3,
+			ApiVersion: 4,
 		})
 	})
 
