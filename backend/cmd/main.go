@@ -16,6 +16,8 @@ func main() {
 	e := echo.New()
 
 	e.Use(middleware.RequestLogger())
+	// this API should be available for standalone use
+	e.Use(middleware.CORS("*"))
 
 	e.GET("/commit", func(c *echo.Context) error {
 		return c.String(http.StatusOK, CommitHash)
