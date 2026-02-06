@@ -20,6 +20,9 @@ jobs:
           - name: db
             dockerfile: backend/DB.Dockerfile
             context: backend
+          - name: web
+            dockerfile: frontend/WEB.Dockerfile
+            context: frontend
     steps:
       - uses: actions/checkout@v6
 
