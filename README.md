@@ -2,12 +2,22 @@
 
 A sassy little web app to transfer funds from your wallet to mine and transfer snake oil from my non-existant inventory to yours!
 
-This is a university project, I will try to keep things simple while also over-engineering where possible. The backend is in Go, and the frontend a SPA website written in Vue and Typescript which is transpiled to Javascript which generates HTML after reading JSON which is fetched after making a request to the backend. Could I have just sent the final JSON to the client along with some alpine or htmx code? No, because Vue is required for a passing grade.
+## Local Deployment
 
-## Deployments
+Docker compose is used for local deployments.
 
-CI/CD is setup to automatically build container images and publish them to the GitHub Container Registry. Server-side, `podman auto-update` is used for continuous delivery. Zero-downtime is not guranteed in the current setup, as only one node is used with no orchestrator.
+```
+$ docker-compose --version
+Docker Compose version 5.0.2
+```
 
-## Local development
+Links to locally hosted services:
+- koopify-web: [https://localhost:8000/](https://localhost:8000/)
+- koopify-api: [https://localhost:8080/](https://localhost:8000/)
+- koopify-db: TODO
 
-TODO. Probably going to be docker-compose, so it works with most popular OCI runtimes like podman (sorry lxc).
+TLS is used, as the same container images are used for the real deployment on [https://koopify.piguy.nl](https://koopify.piguy.nl). The docker-compose manifest spins up an alpine container to generate locally signed certificates. The official deployment uses letsencrypt.
+
+### License
+
+All the code in this repository is licensed under Apache-2.0 license.
