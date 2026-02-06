@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY . .
 
+RUN bun install
 RUN bun run build-only
 
 FROM docker.io/library/nginx:1.29.5-alpine AS base
