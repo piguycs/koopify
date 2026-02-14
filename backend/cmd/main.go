@@ -2,63 +2,69 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
+	"log"
 	"net/http"
-	"os"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/labstack/echo-jwt/v5"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
+	"piguy.nl/koopify/internal"
+	"piguy.nl/koopify/internal/db"
+	"piguy.nl/koopify/internal/user"
 )
 
+var DefaultPgDb = "postgres://postgres:postgres@localhost:5432/?sslmode=disable"
+var DefaultHostAddr = ":8080"
 var CommitHash = "dev"
 
 func main() {
+	jwtSecret := internal.GetEnvDefault("JWT_SECRET", "INVALID_SECRET")
+	if jwtSecret == "INVALID_SECRET" {
+		panic("cannot run the application without a valid JWT secret")
+	}
+
+	ctx := context.Background()
+
 	e := echo.New()
+	app := e.Group("/api/v1", echojwt.JWT([]byte(jwtSecret)))
+	appNoAuth := e.Group("/public_api/v1")
+
+	validator := internal.NewCustomValidator()
+	e.Validator = &validator
 
 	e.Use(middleware.RequestLogger())
 	// this API should be available for standalone use
 	e.Use(middleware.CORS("*"))
 
+	pgdb := internal.GetEnvDefault("PGDB", DefaultPgDb)
+	conn, err := pgx.Connect(ctx, pgdb)
+	if err != nil {
+		log.Fatal("unable to connect to postgres database", "error", err)
+	}
+	defer conn.Close(ctx)
+
+	queries := db.New(conn)
+
+	userRepo := user.NewUserRepository(queries)
+	userService := user.NewUserService(&userRepo)
+	userController := user.NewUserController(jwtSecret, userService)
+
+	appNoAuth.POST("/login", userController.LoginUser)
+	appNoAuth.POST("/sign_up", userController.CreateUser)
+	app.GET("/users/me", userController.GetUserInfo)
+	app.GET("/users/:id", userController.GetUserInfo)
+
 	e.GET("/commit", func(c *echo.Context) error {
 		return c.String(http.StatusOK, CommitHash)
 	})
 
-	tlsConfig, err := TlsConfig()
+	// pass in the enviornment variable keys for reading the TLS config
+	address := internal.GetEnvDefault("HOST_ADDR", DefaultHostAddr)
+	tlsConfig, err := internal.TlsConfig("TLS_ENABLED", "TLS_CERT", "TLS_KEY")
 	if err != nil {
 		e.Logger.Error("failed to load TLS", "error", err)
 	}
 
-	sc := echo.StartConfig{Address: ":8080", TLSConfig: tlsConfig}
-	if tlsConfig != nil {
-		e.Logger.Info("starting server with TLS :)")
-		sc.TLSConfig = tlsConfig
-	} else {
-		e.Logger.Info("starting server without TLS :(")
-	}
-
-	if err := sc.Start(context.Background(), e); err != nil {
-		e.Logger.Error("failed to start server", "error", err)
-	}
-}
-
-func TlsConfig() (*tls.Config, error) {
-	if os.Getenv("TLS_ENABLED") == "" || os.Getenv("TLS_ENABLED") == "0" {
-		return nil, nil
-	}
-
-	certPEM, err := os.ReadFile(os.Getenv("TLS_CERT"))
-	if err != nil {
-		return nil, err
-	}
-	keyPEM, err := os.ReadFile(os.Getenv("TLS_KEY"))
-	if err != nil {
-		return nil, err
-	}
-
-	cert, err := tls.X509KeyPair(certPEM, keyPEM)
-	if err != nil {
-		return nil, err
-	}
-
-	return &tls.Config{Certificates: []tls.Certificate{cert}}, nil
+	internal.StartServer(ctx, address, tlsConfig, e)
 }

@@ -17,9 +17,6 @@ jobs:
           - name: api
             dockerfile: backend/API.Dockerfile
             context: backend
-          - name: db
-            dockerfile: backend/DB.Dockerfile
-            context: backend
           - name: web
             dockerfile: frontend/WEB.Dockerfile
             context: frontend

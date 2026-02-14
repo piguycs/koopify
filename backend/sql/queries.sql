@@ -1,25 +1,22 @@
--- name: GetAuthor :one
-SELECT * FROM authors
-WHERE id = $1 LIMIT 1;
+-- name: GetUser :one
+select * from users
+    where id = $1 limit 1;
 
--- name: ListAuthors :many
-SELECT * FROM authors
-ORDER BY name;
+-- name: ListUsers :many
+select * from users
+    order by id;
 
--- name: CreateAuthor :one
-INSERT INTO authors (
-  name, bio
-) VALUES (
-  $1, $2
-)
-RETURNING *;
+-- name: CreateUser :one
+insert into users (
+    email, display_name, password
+) values (
+    $1, $2, $3
+) returning *;
 
--- name: UpdateAuthor :exec
-UPDATE authors
-  set name = $2,
-  bio = $3
-WHERE id = $1;
+-- name: DeleteUser :exec
+delete from users
+    where id = $1;
 
--- name: DeleteAuthor :exec
-DELETE FROM authors
-WHERE id = $1;
+-- name: GetUserWithEmail :one
+select * from users
+	where email = $1 limit 1;

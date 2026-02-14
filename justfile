@@ -1,14 +1,19 @@
 # Generate Go code from schemas
 [group("backend")]
 [working-directory: "backend"]
-sqlc:
-    sqlc generate
+sqlc *command="generate":
+	sqlc {{ command }}
 
 # Run the backend server
 [group("backend")]
 [working-directory: "backend"]
 run-backend:
     go run cmd/main.go
+
+[group("backend")]
+[working-directory: "backend"]
+migrate-create seq:
+	migrate create -ext sql -dir sql/migrations -seq {{seq}}
 
 [group("deploy")]
 run-db-container:
