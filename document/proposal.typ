@@ -19,7 +19,7 @@
 
 *Koopify* is an open-source e-commerce platform designed for selling both digital and physical goods. The platform provides core e-commerce functionalities, including product browsing, basic inventory management, user authentication and checkout processing through third-party payment providers.
 
-The demo instance of koopify (#link("https://koopify.piguy.nl")[koopify.piguy.nl]) will simulate an online store, dedicated to trading cards and related merchendise. The system will demonstrate full e-commerce workflows which are possible with the Koopify software from the perspective of both an average user and an administrator.
+The demo instance of koopify (#link("https://koopify.piguy.nl")[koopify.piguy.nl]) will simulate an online store, dedicated to trading cards and related merchandise. The system will demonstrate full e-commerce workflows which are possible with the Koopify software from the perspective of both an average user and an administrator.
 
 = List of available functionalities
 
@@ -38,7 +38,7 @@ The demo instance of koopify (#link("https://koopify.piguy.nl")[koopify.piguy.nl
 3. Administrative features
   - Promote registered users to administrator status
   - Trigger a password reset flow on behalf of any user
-    - The selected user recieves an email with password reset instructions
+    - The selected user receives an email with password reset instructions
   - Manage products (CRUD)
   - Manage curated collections
 
