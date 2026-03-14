@@ -1,3 +1,5 @@
+<!-- TODO: add pagination -->
+
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue"
 import { useAuthStore } from "@/stores/auth"
@@ -12,11 +14,28 @@ const isLoading = ref(false)
 const errorMessage = ref("")
 const successMessage = ref("")
 
+// Search state
+const searchQuery = ref("")
+
 // Sorting state
 const sortKey = ref<keyof UserResponse | null>(null)
 const sortDirection = ref<'asc' | 'desc'>('asc')
 
 type SortableKey = 'id' | 'displayName' | 'email' | 'admin' | 'deletionScheduledAt'
+
+function clearSearch() {
+    searchQuery.value = ""
+}
+
+const filteredUsers = computed(() => {
+    if (!searchQuery.value.trim()) return users.value
+    
+    const query = searchQuery.value.toLowerCase().trim()
+    return users.value.filter(user => 
+        user.displayName.toLowerCase().includes(query) ||
+        user.email.toLowerCase().includes(query)
+    )
+})
 
 function toggleSort(key: SortableKey) {
     if (sortKey.value === key) {
@@ -39,12 +58,12 @@ function getSortIndicator(key: SortableKey): string {
 }
 
 const sortedUsers = computed(() => {
-    if (!sortKey.value) return users.value
+    if (!sortKey.value) return filteredUsers.value
 
     const key = sortKey.value
     const dir = sortDirection.value
 
-    return [...users.value].sort((a, b) => {
+    return [...filteredUsers.value].sort((a, b) => {
         let valA = a[key]
         let valB = b[key]
 
@@ -97,14 +116,14 @@ async function loadUsers() {
     }
 }
 
-const formatDate = (dateStr: string | null | undefined) => {
+function formatDate(dateStr: string | null | undefined) {
     if (!dateStr) return "—"
     return new Date(dateStr).toLocaleDateString()
 }
 
-const toggleAdmin = async (user: UserResponse) => {
+async function toggleAdmin(user: UserResponse) {
     clearMessages()
-    
+
     try {
         const updated = await authStore.updateUserAdmin(
             user.id,
@@ -115,16 +134,16 @@ const toggleAdmin = async (user: UserResponse) => {
         if (index !== -1) {
             users.value[index] = updated
         }
-        
+
         successMessageToast(`User ${updated.admin ? "promoted to" : "demoted from"} admin`)
     } catch (err) {
         errorMessageToast(err, "Failed to update admin status")
     }
 }
 
-const triggerReset = async (user: UserResponse) => {
+async function triggerReset(user: UserResponse) {
     clearMessages()
-    
+
     try {
         const resp = await authStore.triggerPasswordReset(user.id)
         successMessageToast(resp.message)
@@ -152,7 +171,30 @@ onMounted(() => {
 
             <div v-if="isLoading" class="loading">Loading users...</div>
             
-            <div v-else class="table-container">
+            <div v-else class="table-wrapper">
+                <div class="table-controls">
+                    <div class="search-box">
+                        <input
+                            v-model="searchQuery"
+                            type="text"
+                            placeholder="Search by name or email..."
+                            class="search-input"
+                        />
+                        <button 
+                            v-if="searchQuery" 
+                            class="clear-btn"
+                            @click="clearSearch"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                    <div class="results-count">
+                        {{ sortedUsers.length }} user{{ sortedUsers.length === 1 ? '' : 's' }}
+                        <span v-if="searchQuery">found</span>
+                    </div>
+                </div>
+                
+                <div class="table-container">
                 <table class="users-table">
                     <thead>
                         <tr>
@@ -215,6 +257,7 @@ onMounted(() => {
                     </tbody>
                 </table>
             </div>
+            </div>
         </div>
     </AppLayout>
 </template>
@@ -251,6 +294,66 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+
+.table-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.table-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.search-input {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    min-width: 240px;
+}
+
+.search-input::placeholder {
+    color: var(--muted);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: rgba(245, 140, 70, 0.6);
+}
+
+.clear-btn {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.clear-btn:hover {
+    border-color: var(--border-strong);
+    color: var(--text);
+}
+
+.results-count {
+    color: var(--muted);
+    font-size: 14px;
 }
 
 .toast {
