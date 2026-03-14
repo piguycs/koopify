@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue"
+import { ref, computed, onMounted } from "vue"
 import { useAuthStore } from "@/stores/auth"
 import AppLayout from "@/layouts/AppLayout.vue"
 import { ApiError } from "@/api/client"
@@ -11,6 +11,58 @@ const users = ref<UserResponse[]>([])
 const isLoading = ref(false)
 const errorMessage = ref("")
 const successMessage = ref("")
+
+// Sorting state
+const sortKey = ref<keyof UserResponse | null>(null)
+const sortDirection = ref<'asc' | 'desc'>('asc')
+
+type SortableKey = 'id' | 'displayName' | 'email' | 'admin' | 'deletionScheduledAt'
+
+function toggleSort(key: SortableKey) {
+    if (sortKey.value === key) {
+        // Cycle: asc -> desc -> null (default)
+        if (sortDirection.value === 'asc') {
+            sortDirection.value = 'desc'
+        } else {
+            sortKey.value = null
+        }
+    } else {
+        // New column, default to ascending
+        sortKey.value = key
+        sortDirection.value = 'asc'
+    }
+}
+
+function getSortIndicator(key: SortableKey): string {
+    if (sortKey.value !== key) return ''
+    return sortDirection.value === 'asc' ? ' ▲' : ' ▼'
+}
+
+const sortedUsers = computed(() => {
+    if (!sortKey.value) return users.value
+
+    const key = sortKey.value
+    const dir = sortDirection.value
+
+    return [...users.value].sort((a, b) => {
+        let valA = a[key]
+        let valB = b[key]
+
+        // Handle null/undefined values
+        if (valA === null || valA === undefined) valA = ''
+        if (valB === null || valB === undefined) valB = ''
+
+        // Convert to comparable values
+        if (typeof valA === 'string' && typeof valB === 'string') {
+            valA = valA.toLowerCase()
+            valB = valB.toLowerCase()
+        }
+
+        if (valA < valB) return dir === 'asc' ? -1 : 1
+        if (valA > valB) return dir === 'asc' ? 1 : -1
+        return 0
+    })
+})
 
 function clearMessages() {
     errorMessage.value = ""
@@ -104,16 +156,26 @@ onMounted(() => {
                 <table class="users-table">
                     <thead>
                         <tr>
-                            <th class="col-id">ID</th>
-                            <th class="col-name">Display Name</th>
-                            <th class="col-email">Email</th>
-                            <th class="col-admin">Admin</th>
-                            <th class="col-deletion">Deletion</th>
+                            <th class="col-id sortable" @click="toggleSort('id')">
+                                ID{{ getSortIndicator('id') }}
+                            </th>
+                            <th class="col-name sortable" @click="toggleSort('displayName')">
+                                Display Name{{ getSortIndicator('displayName') }}
+                            </th>
+                            <th class="col-email sortable" @click="toggleSort('email')">
+                                Email{{ getSortIndicator('email') }}
+                            </th>
+                            <th class="col-admin sortable" @click="toggleSort('admin')">
+                                Admin{{ getSortIndicator('admin') }}
+                            </th>
+                            <th class="col-deletion sortable" @click="toggleSort('deletionScheduledAt')">
+                                Deletion{{ getSortIndicator('deletionScheduledAt') }}
+                            </th>
                             <th class="col-actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="user in users" :key="user.id">
+                        <tr v-for="user in sortedUsers" :key="user.id">
                             <td class="col-id">{{ user.id }}</td>
                             <td class="col-name">
                                 <div class="truncated" :title="user.displayName">
@@ -241,6 +303,16 @@ onMounted(() => {
     letter-spacing: 1px;
     color: var(--muted);
     white-space: nowrap;
+}
+
+.users-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.users-table th.sortable:hover {
+    color: var(--text);
+    background: rgba(245, 140, 70, 0.1);
 }
 
 .users-table tbody tr:hover {
