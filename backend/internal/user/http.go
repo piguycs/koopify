@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v5"
 	"piguy.nl/koopify/internal"
@@ -36,6 +37,7 @@ func (uc *UserController) CreateUser(ctx *echo.Context) (err error) {
 		case errors.Is(err, ErrUserExists):
 			return ctx.JSON(http.StatusConflict, response.NewError("user_exists", err.Error()))
 		default:
+			log.Errorf("Error when trying to create user: %s\n", err.Error())
 			return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to create user"))
 		}
 	}
