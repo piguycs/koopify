@@ -7,6 +7,8 @@ import SignUpPage from "@/pages/SignUpPage.vue"
 import AccountPage from "@/pages/AccountPage.vue"
 import NotFoundPage from "@/pages/NotFoundPage.vue"
 import ForbiddenPage from "@/pages/ForbiddenPage.vue"
+import AdminInventoryPage from "@/pages/AdminInventoryPage.vue"
+import AdminUsersPage from "@/pages/AdminUsersPage.vue"
 
 const router = createRouter({
     history: createWebHistory(),
@@ -20,13 +22,38 @@ const router = createRouter({
         // authenticated route
         { path: "/account", name: "account", component: AccountPage, meta: { requiresAuth: true } },
 
+        { 
+            path: "/admin/inventory", 
+            name: "admin-inventory", 
+            component: AdminInventoryPage, 
+            meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        { 
+            path: "/admin/users", 
+            name: "admin-users", 
+            component: AdminUsersPage, 
+            meta: { requiresAuth: true, requiresAdmin: true },
+        },
+
         { path: "/forbidden", name: "forbidden", component: ForbiddenPage },
         { path: "/:pathMatch(.*)*", name: "not-found", component: NotFoundPage },
     ],
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
     const authStore = useAuthStore()
+    if (authStore.token && !authStore.currentUser) {
+        try {
+            await authStore.fetchCurrentUser()
+        } catch {
+            authStore.signOut()
+        }
+    }
+
+    if (to.meta.requiresAdmin && !authStore.currentUser?.admin) {
+        return { name: "not-found" }
+    }
+
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
         return { name: "forbidden", query: { redirect: to.fullPath } }
     }

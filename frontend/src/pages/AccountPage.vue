@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
+import { useRouter } from "vue-router"
 import { useAuthStore } from "@/stores/auth"
 import AppLayout from "@/layouts/AppLayout.vue"
+import AccountCard from "@/components/AccountCard.vue"
 import EditableField from "@/components/EditableField.vue"
 import ActionCard from "@/components/ActionCard.vue"
 import ModalDialog from "@/components/ModalDialog.vue"
 import { ApiError } from "@/api/client"
 
 const authStore = useAuthStore()
+const router = useRouter()
 
 const currentUser = computed(() => authStore.currentUser)
 const userDisplayName = computed(() => currentUser.value?.displayName)
@@ -127,19 +130,47 @@ async function confirmDeletionRequest() {
     }
 }
 
+const isAdmin = computed(() => Boolean(currentUser.value?.admin))
+
+const goToAdminInventory = () => {
+    router.push("/admin/inventory")
+}
+
+const goToAdminUsers = () => {
+    router.push("/admin/users")
+}
+
 </script>
 
 <template>
     <AppLayout>
         <section class="account">
-            <div class="account-card">
-                <div class="account-header">
-                    <p class="eyebrow">Account</p>
-                    <h1>View account</h1>
-                    <p class="subtle">Manage your profile details.</p>
-                </div>
-
-                <div class="account-content">
+            <div class="account-stack">
+                <AccountCard
+                    v-if="isAdmin"
+                    eyebrow="Admin"
+                    title="Admin actions"
+                    description="Manage inventory and user access."
+                    badge="ADMIN"
+                >
+                    <ActionCard
+                        title="Manage Inventory"
+                        description="Add, edit, and update stock."
+                        button-text="Open inventory"
+                        @click="goToAdminInventory"
+                    />
+                    <ActionCard
+                        title="Manage Users"
+                        description="Promote users and handle resets."
+                        button-text="Open users"
+                        @click="goToAdminUsers"
+                    />
+                </AccountCard>
+                <AccountCard
+                    eyebrow="Account"
+                    title="View account"
+                    description="Manage your profile details."
+                >
                     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
                     <p v-if="statusMessage" class="status">{{ statusMessage }}</p>
                     <EditableField
@@ -166,7 +197,7 @@ async function confirmDeletionRequest() {
                         :disabled="isDeleting"
                         @click="handleDeletionAction"
                     />
-                </div>
+                </AccountCard>
             </div>
         </section>
         <ModalDialog
@@ -191,37 +222,10 @@ async function confirmDeletionRequest() {
     justify-content: center;
 }
 
-.account-card {
+.account-stack {
     width: min(520px, 100%);
-    background: var(--panel);
-    border: 1px solid var(--border);
-    padding: 28px;
-}
-
-.account-header h1 {
-    font-family: "Rajdhani", sans-serif;
-    margin: 8px 0 6px;
-    font-size: 30px;
-}
-
-.eyebrow {
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    font-size: 11px;
-    font-weight: 600;
-    opacity: 0.7;
-    margin: 0;
-}
-
-.subtle {
-    color: var(--muted);
-    margin: 0;
-}
-
-.account-content {
-    margin-top: 22px;
     display: grid;
-    gap: 16px;
+    gap: 18px;
 }
 
 .error {
