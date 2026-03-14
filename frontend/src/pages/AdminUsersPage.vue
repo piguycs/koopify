@@ -4,8 +4,15 @@
 import { ref, computed, onMounted } from "vue"
 import { useAuthStore } from "@/stores/auth"
 import AppLayout from "@/layouts/AppLayout.vue"
+import ModalDialog from "@/components/ModalDialog.vue"
 import { ApiError } from "@/api/client"
 import type { UserResponse } from "@/stores/auth"
+
+enum AdminModalState {
+    Disabled,
+    Promoting,
+    Demoting,
+}
 
 const authStore = useAuthStore()
 
@@ -14,12 +21,29 @@ const isLoading = ref(false)
 const errorMessage = ref("")
 const successMessage = ref("")
 
-// Search state
+// these are for filtering/sorting the rows
 const searchQuery = ref("")
-
-// Sorting state
 const sortKey = ref<keyof UserResponse | null>(null)
 const sortDirection = ref<'asc' | 'desc'>('asc')
+
+// Admin toggle modal state
+const adminModalState = ref(AdminModalState.Disabled)
+const isDemoting = computed(() => adminModalState.value == AdminModalState.Demoting)
+const isModalOpen = computed(() => adminModalState.value != AdminModalState.Disabled)
+const userToToggle = ref<UserResponse | null>(null)
+
+function closeAdminModal() {
+    adminModalState.value = AdminModalState.Disabled
+    userToToggle.value = null
+}
+
+async function confirmAdminToggle() {
+    if (!userToToggle.value) return
+    
+    const user = userToToggle.value
+    closeAdminModal()
+    await performToggleAdmin(user)
+}
 
 type SortableKey = 'id' | 'displayName' | 'email' | 'admin' | 'deletionScheduledAt'
 
@@ -91,7 +115,6 @@ function clearMessages() {
 // TODO: perhaps a proper toast someday, not today though
 function successMessageToast(message: string) {
     successMessage.value = message
-    setTimeout(() => successMessage.value = "", 3000)
 }
 
 // TODO: perhaps a proper toast someday, not today though
@@ -121,7 +144,7 @@ function formatDate(dateStr: string | null | undefined) {
     return new Date(dateStr).toLocaleDateString()
 }
 
-async function toggleAdmin(user: UserResponse) {
+async function performToggleAdmin(user: UserResponse) {
     clearMessages()
 
     try {
@@ -138,6 +161,23 @@ async function toggleAdmin(user: UserResponse) {
         successMessageToast(`User ${updated.admin ? "promoted to" : "demoted from"} admin`)
     } catch (err) {
         errorMessageToast(err, "Failed to update admin status")
+    }
+}
+
+function toggleAdmin(user: UserResponse) {
+    // Prevent self-demotion
+    if (user.admin && user.id === authStore.currentUser?.id) {
+        errorMessageToast(null, "You cannot demote yourself")
+        return
+    }
+    
+    userToToggle.value = user
+    if (adminModalState.value == AdminModalState.Disabled) {
+        if (user.admin) {
+            adminModalState.value = AdminModalState.Demoting
+        } else {
+            adminModalState.value = AdminModalState.Promoting
+        }
     }
 }
 
@@ -259,6 +299,28 @@ onMounted(() => {
             </div>
             </div>
         </div>
+
+        <ModalDialog
+            :open="isModalOpen"
+            :title="isDemoting ? 'Confirm Demote' : 'Confirm Promotion'"
+            :description="isDemoting 
+                ? 'Are you sure you want to demote this user from admin? They will lose access to admin features immediately.' 
+                : 'Are you sure you want to promote this user to admin? They will gain access to all admin features.'"
+            @close="closeAdminModal"
+        >
+            <template #actions>
+                <button class="action-btn ghost" @click="closeAdminModal">
+                    Cancel
+                </button>
+                <button 
+                    class="action-btn" 
+                    :class="isDemoting ? 'danger' : 'primary'"
+                    @click="confirmAdminToggle"
+                >
+                    {{ isDemoting ? 'Demote' : 'Promote' }}
+                </button>
+            </template>
+        </ModalDialog>
     </AppLayout>
 </template>
 
@@ -506,6 +568,26 @@ onMounted(() => {
 
 .action-btn.danger:hover {
     background: rgba(243, 139, 139, 0.1);
+}
+
+.action-btn.ghost {
+    border-color: var(--border);
+    color: var(--muted);
+}
+
+.action-btn.ghost:hover {
+    border-color: var(--border-strong);
+    color: var(--text);
+    background: transparent;
+}
+
+.action-btn.primary {
+    border-color: rgba(139, 243, 139, 0.6);
+    color: #8bf38b;
+}
+
+.action-btn.primary:hover {
+    background: rgba(139, 243, 139, 0.1);
 }
 
 /* Responsive */
