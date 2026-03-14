@@ -1,0 +1,27 @@
+@import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap");
+
+:root {
+    --bg: #0d0c0b;
+    --panel: #14110f;
+    --panel-dark: #1a1411;
+    --text: #f2e7db;
+    --muted: #b59c8a;
+    --accent: #f58c46;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.2);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Space Grotesk", sans-serif;
+    color: var(--text);
+    background: var(--bg);
+}
+
+a {
+    color: inherit;
+}

@@ -1,0 +1,167 @@
+<script setup lang="ts">
+import { RouterLink } from "vue-router"
+import { useAppStore } from "@/stores/app"
+
+const appStore = useAppStore()
+</script>
+
+<template>
+    <div class="page">
+        <header class="nav">
+            <div class="logo">Koopify</div>
+            <nav class="nav-links">
+                <RouterLink to="/">Home</RouterLink>
+                <RouterLink to="/catalog">Catalog</RouterLink>
+            </nav>
+            <div class="nav-actions">
+                <button class="ghost">Sign in</button>
+                <button class="primary">Cart ({{ appStore.cartCount }})</button>
+            </div>
+        </header>
+
+        <main class="content">
+            <slot />
+        </main>
+
+        <footer class="footer">
+            <div>
+                <div class="logo">Koopify</div>
+                <p>A fictional store to sell fictional videogame items</p>
+            </div>
+            <div class="footer-links">
+                <!--
+                <RouterLink to="/catalog">Inventory</RouterLink>
+                <RouterLink to="/trade">Support</RouterLink>
+                <RouterLink to="/">Contact</RouterLink>
+                -->
+            </div>
+        </footer>
+    </div>
+</template>
+
+<style scoped>
+.page {
+    min-height: 100vh;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+}
+
+.nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 8vw;
+    border-bottom: 1px solid var(--border);
+    background: rgba(13, 12, 11, 0.92);
+}
+
+.logo {
+    font-family: "Rajdhani", sans-serif;
+    font-weight: 700;
+    letter-spacing: 2px;
+    font-size: 20px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 18px;
+}
+
+.nav-links a {
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.nav-links a.router-link-active {
+    opacity: 1;
+}
+
+.nav-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.ghost,
+.primary {
+    border: 1px solid transparent;
+    border-radius: 0;
+    padding: 10px 16px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.ghost {
+    background: transparent;
+    border-color: var(--border-strong);
+    color: var(--text);
+}
+
+.primary {
+    background: #2a1c16;
+    color: var(--text);
+    border-color: rgba(245, 140, 70, 0.6);
+}
+
+.ghost:hover,
+.primary:hover {
+    transform: translateY(-1px);
+}
+
+.content {
+    padding: 36px 8vw 72px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    flex: 1;
+}
+
+.footer {
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    padding: 28px 8vw;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.footer-links {
+    display: flex;
+    gap: 16px;
+}
+
+.footer a {
+    text-decoration: none;
+    font-size: 13px;
+}
+
+@media (max-width: 900px) {
+    .nav {
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .nav-links {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .nav-actions {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 600px) {
+    .content {
+        padding: 24px 6vw 56px;
+    }
+}
+</style>
