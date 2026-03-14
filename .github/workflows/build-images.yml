@@ -36,13 +36,15 @@ jobs:
           driver: docker-container
 
       - name: Build and push ${{ matrix.image.name }}
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           context: ${{ matrix.image.context }}
           file: ${{ matrix.image.dockerfile }}
           push: true
+          build-args: |
+            VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL }}
           tags: |
             ghcr.io/${{ github.repository }}-${{ matrix.image.name }}:latest
             ghcr.io/${{ github.repository }}-${{ matrix.image.name }}:${{ github.sha }}
