@@ -12,6 +12,7 @@ enum AdminModalState {
     Disabled,
     Promoting,
     Demoting,
+    Deleting,
 }
 
 const authStore = useAuthStore()
@@ -43,6 +44,47 @@ async function confirmAdminToggle() {
     const user = userToToggle.value
     closeAdminModal()
     await performToggleAdmin(user)
+}
+
+// Delete modal state
+const userToDelete = ref<UserResponse | null>(null)
+const isDeleteModalOpen = computed(() => adminModalState.value === AdminModalState.Deleting)
+
+function openDeleteModal(user: UserResponse) {
+    // Prevent self-deletion
+    if (user.id === authStore.currentUser?.id) {
+        errorMessageToast(null, "You cannot delete yourself")
+        return
+    }
+    
+    userToDelete.value = user
+    adminModalState.value = AdminModalState.Deleting
+}
+
+function closeDeleteModal() {
+    adminModalState.value = AdminModalState.Disabled
+    userToDelete.value = null
+}
+
+async function confirmDelete() {
+    if (!userToDelete.value) return
+    
+    const user = userToDelete.value
+    closeDeleteModal()
+    
+    try {
+        const updated = await authStore.requestUserDeletionAdmin(user.id)
+        
+        // Update the user in the list
+        const index = users.value.findIndex(u => u.id === updated.id)
+        if (index !== -1) {
+            users.value[index] = updated
+        }
+        
+        successMessageToast(`User ${user.displayName} scheduled for deletion`)
+    } catch (err) {
+        errorMessageToast(err, "Failed to schedule user deletion")
+    }
 }
 
 type SortableKey = 'id' | 'displayName' | 'email' | 'admin' | 'deletionScheduledAt'
@@ -139,9 +181,15 @@ async function loadUsers() {
     }
 }
 
-function formatDate(dateStr: string | null | undefined) {
-    if (!dateStr) return "—"
-    return new Date(dateStr).toLocaleDateString()
+function formatDate(dateStr: string) {
+    return new Date(dateStr).toLocaleString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZoneName: 'short'
+    })
 }
 
 async function performToggleAdmin(user: UserResponse) {
@@ -274,7 +322,10 @@ onMounted(() => {
                                 <span v-else class="dash">—</span>
                             </td>
                             <td class="col-deletion">
-                                {{ formatDate(user.deletionScheduledAt) }}
+                                <span v-if="user.deletionScheduledAt">
+                                    {{ formatDate(user.deletionScheduledAt) }}
+                                </span>
+                                <span v-else class="dash">—</span>
                             </td>
                             <td class="col-actions">
                                 <div class="action-buttons">
@@ -290,6 +341,12 @@ onMounted(() => {
                                         @click="triggerReset(user)"
                                     >
                                         Reset
+                                    </button>
+                                    <button 
+                                        class="action-btn danger"
+                                        @click="openDeleteModal(user)"
+                                    >
+                                        Delete
                                     </button>
                                 </div>
                             </td>
@@ -318,6 +375,22 @@ onMounted(() => {
                     @click="confirmAdminToggle"
                 >
                     {{ isDemoting ? 'Demote' : 'Promote' }}
+                </button>
+            </template>
+        </ModalDialog>
+
+        <ModalDialog
+            :open="isDeleteModalOpen"
+            title="Confirm Deletion"
+            description="Are you sure you want to schedule this user for deletion? They will have 24 hours to cancel the deletion by logging in."
+            @close="closeDeleteModal"
+        >
+            <template #actions>
+                <button class="action-btn ghost" @click="closeDeleteModal">
+                    Cancel
+                </button>
+                <button class="action-btn danger" @click="confirmDelete">
+                    Delete
                 </button>
             </template>
         </ModalDialog>
@@ -555,6 +628,8 @@ onMounted(() => {
     cursor: pointer;
     transition: all 0.2s;
     white-space: nowrap;
+    min-width: 70px;
+    text-align: center;
 }
 
 .action-btn:hover {

@@ -49,6 +49,29 @@ func (uc *UserController) CreateUser(ctx *echo.Context) (err error) {
 	return ctx.JSON(http.StatusOK, resp)
 }
 
+func (uc *UserController) RequestUserDeletionAdmin(ctx *echo.Context) error {
+	if !auth.IsAdminFromToken(ctx) {
+		return ctx.JSON(http.StatusForbidden, response.NewError("forbidden", "admin access required"))
+	}
+
+	userID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, response.NewError("invalid_request", "invalid user id"))
+	}
+
+	resp, err := uc.service.RequestDeletion(ctx.Request().Context(), userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrUserNotFound):
+			return ctx.JSON(http.StatusNotFound, response.NewError("user_not_found", err.Error()))
+		default:
+			return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to request user deletion"))
+		}
+	}
+
+	return ctx.JSON(http.StatusOK, resp)
+}
+
 func (uc *UserController) GetPasswordPolicy(ctx *echo.Context) error {
 	return ctx.JSON(http.StatusOK, PasswordPolicyResponse{
 		MinLength: PasswordMinLength,

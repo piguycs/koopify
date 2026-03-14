@@ -170,5 +170,15 @@ export const useAuthStore = defineStore("auth", {
                 authToken: this.token,
             })
         },
+
+        async requestUserDeletionAdmin(id: number): Promise<UserResponse> {
+            if (!this.token) {
+                throw new ApiError("Not authenticated", 401)
+            }
+
+            return await apiClient.post<UserResponse>(`/api/v1/users/${id}/deletion`, undefined, {
+                authToken: this.token,
+            })
+        },
     },
 })
