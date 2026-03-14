@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
 	"piguy.nl/koopify/internal"
@@ -30,12 +30,12 @@ func main() {
 	// this API should be available for standalone use
 	e.Use(middleware.CORS("*"))
 
-	conn, err := pgx.Connect(ctx, config.PgDb)
+	conn, err := pgxpool.New(ctx, config.PgDb)
 	if err != nil {
 		log.Fatal("unable to connect to postgres database", "error", err)
 		os.Exit(1)
 	}
-	defer conn.Close(ctx)
+	defer conn.Close()
 
 	queries := db.New(conn)
 
