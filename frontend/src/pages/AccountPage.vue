@@ -72,7 +72,10 @@ const deletionScheduledAt = computed(() => {
 
 const deletionScheduledLabel = computed(() =>
     deletionScheduledAt.value
-        ? deletionScheduledAt.value.toLocaleString(undefined, { timeZoneName: "short" })
+        ? deletionScheduledAt.value.toLocaleString(undefined, { 
+            hour12: false,
+            timeZoneName: "short" 
+        })
         : null,
 )
 
@@ -171,8 +174,9 @@ const goToAdminUsers = () => {
                     title="View account"
                     description="Manage your profile details."
                 >
-                    <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-                    <p v-if="statusMessage" class="status">{{ statusMessage }}</p>
+                    <!-- TODO: move this to a toast component -->
+                    <p v-if="errorMessage" class="toast error">{{ errorMessage }}</p>
+                    <p v-if="statusMessage" class="toast success">{{ statusMessage }}</p>
                     <EditableField
                         label="Display name"
                         :value="userDisplayName"
@@ -228,16 +232,21 @@ const goToAdminUsers = () => {
     gap: 18px;
 }
 
-.error {
-    margin: 0;
-    font-size: 13px;
-    color: #f38b8b;
+.toast {
+    padding: 12px 16px;
+    font-size: 14px;
 }
 
-.status {
-    margin: 0;
-    font-size: 13px;
-    color: var(--muted);
+.toast.success {
+    background: rgba(139, 243, 139, 0.1);
+    border: 1px solid rgba(139, 243, 139, 0.3);
+    color: #8bf38b;
+}
+
+.toast.error {
+    background: rgba(243, 139, 139, 0.1);
+    border: 1px solid rgba(243, 139, 139, 0.3);
+    color: #f38b8b;
 }
 
 .ghost {
