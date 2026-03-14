@@ -4,6 +4,26 @@ type RequestOptions = {
     method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
     body?: unknown
     headers?: Record<string, string>
+    authToken?: string
+}
+
+type ErrorPayload = {
+    error?: {
+        code?: string
+        message?: string
+    }
+}
+
+export class ApiError extends Error {
+    status: number
+    code?: string
+
+    constructor(message: string, status: number, code?: string) {
+        super(message)
+        this.name = "ApiError"
+        this.status = status
+        this.code = code
+    }
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -12,19 +32,39 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
         headers: {
             "Content-Type": "application/json",
             ...(options.headers ?? {}),
+            ...(options.authToken ? { Authorization: `Bearer ${options.authToken}` } : {}),
         },
         body: options.body ? JSON.stringify(options.body) : undefined,
     })
 
     if (!response.ok) {
-        throw new Error(`Request failed: ${response.status}`)
+        const contentType = response.headers.get("Content-Type") ?? ""
+        const payload = contentType.includes("application/json")
+            ? ((await response.json().catch(() => undefined)) as ErrorPayload | undefined)
+            : undefined
+
+        const message = payload?.error?.message ?? `Request failed: ${response.status}`
+        const code = payload?.error?.code
+        throw new ApiError(message, response.status, code)
     }
 
-    return (await response.json()) as T
+    if (response.status === 204) {
+        return undefined as T
+    }
+
+    const contentType = response.headers.get("Content-Type") ?? ""
+    if (contentType.includes("application/json")) {
+        return (await response.json()) as T
+    }
+
+    return undefined as T
 }
 
 export const apiClient = {
+    /// Make a GET request to the `path`
     get: <T>(path: string, options?: RequestOptions) => request<T>(path, options),
+
+    /// Make a POST request to the `path` with the provided `body`
     post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
         request<T>(path, { ...options, method: "POST", body }),
 }

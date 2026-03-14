@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RouterLink } from "vue-router"
 import AppLayout from "@/layouts/AppLayout.vue"
 
 const featuredProducts = [
@@ -37,7 +38,7 @@ const featuredProducts = [
                 <h1>Do IRL trading in this store</h1>
                 <p class="lead">A fictional store to sell fictional videogame items.</p>
                 <div class="hero-actions">
-                    <button class="primary">Shop now</button>
+                    <RouterLink class="primary" to="/catalog">Shop now</RouterLink>
                 </div>
             </div>
         </section>
@@ -193,6 +194,9 @@ const featuredProducts = [
     font-weight: 600;
     cursor: pointer;
     transition: transform 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
 }
 
 .ghost {

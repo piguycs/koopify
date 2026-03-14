@@ -1,8 +1,27 @@
 <script setup lang="ts">
-import { RouterLink } from "vue-router"
+import { onMounted } from "vue"
+import { RouterLink, useRouter } from "vue-router"
 import { useAppStore } from "@/stores/app"
+import { useAuthStore } from "@/stores/auth"
 
 const appStore = useAppStore()
+const authStore = useAuthStore()
+const router = useRouter()
+
+const handleSignOut = () => {
+    authStore.signOut()
+    router.push("/")
+}
+
+onMounted(async () => {
+    if (authStore.token && !authStore.currentUser) {
+        try {
+            await authStore.fetchCurrentUser()
+        } catch {
+            authStore.signOut()
+        }
+    }
+})
 </script>
 
 <template>
@@ -14,8 +33,20 @@ const appStore = useAppStore()
                 <RouterLink to="/catalog">Catalog</RouterLink>
             </nav>
             <div class="nav-actions">
-                <button class="ghost">Sign in</button>
-                <button class="primary">Cart ({{ appStore.cartCount }})</button>
+                <template v-if="!authStore.isAuthenticated">
+                    <RouterLink class="ghost" to="/sign-in">Sign in</RouterLink>
+                </template>
+                <template v-else>
+                    <div class="account-menu">
+                        <RouterLink class="ghost" to="/account">View Account</RouterLink>
+                        <div class="account-dropdown">
+                            <button class="ghost" type="button" @click="handleSignOut">
+                                Sign out
+                            </button>
+                        </div>
+                    </div>
+                </template>
+                <button class="primary" type="button">Cart ({{ appStore.cartCount }})</button>
             </div>
         </header>
 
@@ -82,6 +113,36 @@ const appStore = useAppStore()
 .nav-actions {
     display: flex;
     gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+
+.account-menu {
+    position: relative;
+    display: inline-flex;
+}
+
+.account-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 6px;
+    display: none;
+    min-width: 100%;
+    z-index: 10;
+}
+
+.account-dropdown .ghost {
+    width: 100%;
+    justify-content: center;
+}
+
+.account-menu:hover .account-dropdown,
+.account-menu:focus-within .account-dropdown {
+    display: block;
 }
 
 .ghost,
@@ -91,10 +152,16 @@ const appStore = useAppStore()
     padding: 10px 16px;
     font-family: inherit;
     font-weight: 600;
+    font-size: 13px;
     cursor: pointer;
     transition:
         transform 0.2s ease,
         box-shadow 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
 }
 
 .ghost {
