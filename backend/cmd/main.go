@@ -3,32 +3,25 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
+	"os"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/labstack/echo-jwt/v5"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
 	"piguy.nl/koopify/internal"
 	"piguy.nl/koopify/internal/db"
+	"piguy.nl/koopify/internal/router"
 	"piguy.nl/koopify/internal/user"
 )
 
-var DefaultPgDb = "postgres://postgres:postgres@localhost:5432/?sslmode=disable"
-var DefaultHostAddr = ":8080"
-var CommitHash = "dev"
-
 func main() {
-	jwtSecret := internal.GetEnvDefault("JWT_SECRET", "INVALID_SECRET")
-	if jwtSecret == "INVALID_SECRET" {
-		panic("cannot run the application without a valid JWT secret")
+	ctx := context.Background()
+	config, err := internal.LoadConfig()
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	ctx := context.Background()
-
 	e := echo.New()
-	app := e.Group("/api/v1", echojwt.JWT([]byte(jwtSecret)))
-	appNoAuth := e.Group("/public_api/v1")
 
 	validator := internal.NewCustomValidator()
 	e.Validator = &validator
@@ -37,10 +30,10 @@ func main() {
 	// this API should be available for standalone use
 	e.Use(middleware.CORS("*"))
 
-	pgdb := internal.GetEnvDefault("PGDB", DefaultPgDb)
-	conn, err := pgx.Connect(ctx, pgdb)
+	conn, err := pgx.Connect(ctx, config.PgDb)
 	if err != nil {
 		log.Fatal("unable to connect to postgres database", "error", err)
+		os.Exit(1)
 	}
 	defer conn.Close(ctx)
 
@@ -48,23 +41,14 @@ func main() {
 
 	userRepo := user.NewUserRepository(queries)
 	userService := user.NewUserService(&userRepo)
-	userController := user.NewUserController(jwtSecret, userService)
+	userController := user.NewUserController(config.JwtSecret, userService)
 
-	appNoAuth.POST("/login", userController.LoginUser)
-	appNoAuth.POST("/sign_up", userController.CreateUser)
-	app.GET("/users/me", userController.GetUserInfo)
-	app.GET("/users/:id", userController.GetUserInfo)
+	router.RegisterPublicRoutes(e, &userController)
+	router.RegisterPrivateRoutes(e, config.JwtSecret, &userController)
 
-	e.GET("/commit", func(c *echo.Context) error {
-		return c.String(http.StatusOK, CommitHash)
-	})
-
-	// pass in the enviornment variable keys for reading the TLS config
-	address := internal.GetEnvDefault("HOST_ADDR", DefaultHostAddr)
-	tlsConfig, err := internal.TlsConfig("TLS_ENABLED", "TLS_CERT", "TLS_KEY")
-	if err != nil {
-		e.Logger.Error("failed to load TLS", "error", err)
+	for _, route := range e.Router().Routes() {
+		log.Printf("Route: %s %s\n", route.Method, route.Path)
 	}
 
-	internal.StartServer(ctx, address, tlsConfig, e)
+	internal.StartServer(ctx, config.HostAddr, config.TlsConfig, e)
 }

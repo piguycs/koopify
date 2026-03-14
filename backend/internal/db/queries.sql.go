@@ -14,7 +14,7 @@ insert into users (
     email, display_name, password
 ) values (
     $1, $2, $3
-) returning id, email, display_name, password
+) returning id, email, display_name, password, admin
 `
 
 type CreateUserParams struct {
@@ -31,6 +31,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Email,
 		&i.DisplayName,
 		&i.Password,
+		&i.Admin,
 	)
 	return i, err
 }
@@ -46,7 +47,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id int64) error {
 }
 
 const getUser = `-- name: GetUser :one
-select id, email, display_name, password from users
+select id, email, display_name, password, admin from users
     where id = $1 limit 1
 `
 
@@ -58,12 +59,13 @@ func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
 		&i.Email,
 		&i.DisplayName,
 		&i.Password,
+		&i.Admin,
 	)
 	return i, err
 }
 
 const getUserWithEmail = `-- name: GetUserWithEmail :one
-select id, email, display_name, password from users
+select id, email, display_name, password, admin from users
 	where email = $1 limit 1
 `
 
@@ -75,12 +77,13 @@ func (q *Queries) GetUserWithEmail(ctx context.Context, email string) (User, err
 		&i.Email,
 		&i.DisplayName,
 		&i.Password,
+		&i.Admin,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-select id, email, display_name, password from users
+select id, email, display_name, password, admin from users
     order by id
 `
 
@@ -98,6 +101,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.Email,
 			&i.DisplayName,
 			&i.Password,
+			&i.Admin,
 		); err != nil {
 			return nil, err
 		}

@@ -17,16 +17,16 @@ migrate-create seq:
 
 [group("deploy")]
 run-db-container:
-    docker run -p5432:5432 kopify-postgres
+    docker run -p5432:5432 koopify-postgres
 
 [group("deploy")]
 build-db-container:
-    docker build -t kopify-postgres -f backend/DB.Dockerfile
+    docker build -t koopify-postgres -f backend/DB.Dockerfile
 
 [group("deploy")]
 build-api-container:
-    docker build -t kopify-backend -f backend/API.Dockerfile
+    docker build -t koopify-backend -f backend/API.Dockerfile
 
 [group("deploy")]
 run-api-container:
-    docker run -p8080:8080 kopify-backend
+    docker run -p8080:8080 koopify-backend

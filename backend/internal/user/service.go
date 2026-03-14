@@ -20,3 +20,7 @@ func (us *UserService) CreateUser(ctx context.Context, user CreateUserRequest) (
 func (us *UserService) LoginUser(ctx context.Context, user LoginUserRequest) (*UserResponse, error) {
 	return us.repository.LoginUser(ctx, user)
 }
+
+func (us *UserService) GetUserByID(ctx context.Context, id int64) (*UserResponse, error) {
+	return us.repository.GetUserByID(ctx, id)
+}

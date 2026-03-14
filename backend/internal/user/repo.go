@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
 	"piguy.nl/koopify/internal/db"
@@ -14,6 +15,7 @@ type HashFn func(string) (string, error)
 type UserRepository interface {
 	CreateUser(ctx context.Context, user CreateUserRequest) (*UserResponse, error)
 	LoginUser(ctx context.Context, user LoginUserRequest) (*UserResponse, error)
+	GetUserByID(ctx context.Context, id int64) (*UserResponse, error)
 }
 
 type PGUserRepository struct {
@@ -51,12 +53,28 @@ func (pgur PGUserRepository) CreateUser(
 func (pgur PGUserRepository) LoginUser(ctx context.Context, user LoginUserRequest) (*UserResponse, error) {
 	dbUser, err := pgur.queries.GetUserWithEmail(ctx, user.Email)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrInvalidCredentials
+		}
 		return nil, err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(user.Password))
 	if err != nil {
 		return nil, ErrInvalidCredentials
+	}
+
+	userResp := UserResponseFrom(dbUser)
+	return &userResp, nil
+}
+
+func (pgur PGUserRepository) GetUserByID(ctx context.Context, id int64) (*UserResponse, error) {
+	dbUser, err := pgur.queries.GetUser(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
 	}
 
 	userResp := UserResponseFrom(dbUser)

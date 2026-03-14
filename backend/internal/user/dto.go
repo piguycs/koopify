@@ -17,6 +17,7 @@ type UserResponse struct {
 	ID          int64  `json:"id"`
 	DisplayName string `json:"displayName"`
 	Email       string `json:"email"`
+	Admin       bool   `json:"admin"`
 }
 
 func (cur CreateUserRequest) ToDbParams(hashFn HashFn) (*db.CreateUserParams, error) {
@@ -39,5 +40,6 @@ func UserResponseFrom(dbu db.User) UserResponse {
 		ID:          dbu.ID,
 		DisplayName: dbu.DisplayName,
 		Email:       dbu.Email,
+		Admin:       dbu.Admin,
 	}
 }
