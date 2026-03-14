@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref } from "vue"
+import { onMounted, ref } from "vue"
 import { RouterLink, useRouter } from "vue-router"
 import AppLayout from "@/layouts/AppLayout.vue"
-import { ApiError } from "@/api/client"
+import { ApiError, apiClient } from "@/api/client"
 import { useAuthStore } from "@/stores/auth"
 
 const authStore = useAuthStore()
@@ -13,6 +13,24 @@ const email = ref("")
 const password = ref("")
 const errorMessage = ref("")
 const isSubmitting = ref(false)
+const policyMessage = ref("")
+const minLength = ref<number | null>(null)
+
+type PasswordPolicy = {
+    minLength: number
+    message: string
+}
+
+onMounted(async () => {
+    try {
+        const policy = await apiClient.get<PasswordPolicy>("/public_api/v1/password_policy")
+        minLength.value = policy.minLength
+        policyMessage.value = policy.message
+    } catch {
+        minLength.value = null
+        policyMessage.value = ""
+    }
+})
 
 const handleSubmit = async () => {
     if (isSubmitting.value) {
@@ -20,6 +38,12 @@ const handleSubmit = async () => {
     }
 
     errorMessage.value = ""
+
+    if (minLength.value !== null && password.value.length < minLength.value) {
+        errorMessage.value = policyMessage.value || "Password is too short"
+        return
+    }
+
     isSubmitting.value = true
 
     try {
@@ -60,6 +84,7 @@ const handleSubmit = async () => {
                         <span>Password</span>
                         <input v-model="password" type="password" autocomplete="new-password" required />
                     </label>
+                    <p v-if="policyMessage" class="policy">{{ policyMessage }}</p>
                     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
                     <button class="primary" type="submit" :disabled="isSubmitting">
                         {{ isSubmitting ? "Creating account" : "Create account" }}
@@ -135,6 +160,12 @@ const handleSubmit = async () => {
     margin: 0;
     font-size: 13px;
     color: #f38b8b;
+}
+
+.policy {
+    margin: 0;
+    font-size: 12px;
+    color: var(--muted);
 }
 
 .primary {

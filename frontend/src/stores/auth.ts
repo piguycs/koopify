@@ -6,10 +6,17 @@ export type UserResponse = {
     displayName: string
     email: string
     admin: boolean
+    requestedDeletionAt?: string | null
+    deletionScheduledAt?: string | null
 }
 
 type LoginResponse = {
     token: string
+}
+
+export type UpdateUserPayload = {
+    displayName?: string
+    email?: string
 }
 
 const TOKEN_KEY = "koopify_token"
@@ -68,6 +75,60 @@ export const useAuthStore = defineStore("auth", {
         signOut() {
             this.currentUser = null
             this.clearToken()
+        },
+        async updateCurrentUser(update: UpdateUserPayload) {
+            if (!this.token) {
+                throw new ApiError("Not authenticated", 401)
+            }
+
+            try {
+                const user = await apiClient.patch<UserResponse>("/api/v1/users/me", update, {
+                    authToken: this.token,
+                })
+                this.currentUser = user
+                return user
+            } catch (err) {
+                if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+                    this.signOut()
+                }
+                throw err
+            }
+        },
+        async requestDeletion() {
+            if (!this.token) {
+                throw new ApiError("Not authenticated", 401)
+            }
+
+            try {
+                const user = await apiClient.post<UserResponse>("/api/v1/users/me/deletion", undefined, {
+                    authToken: this.token,
+                })
+                this.currentUser = user
+                return user
+            } catch (err) {
+                if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+                    this.signOut()
+                }
+                throw err
+            }
+        },
+        async cancelDeletion() {
+            if (!this.token) {
+                throw new ApiError("Not authenticated", 401)
+            }
+
+            try {
+                const user = await apiClient.delete<UserResponse>("/api/v1/users/me/deletion", {
+                    authToken: this.token,
+                })
+                this.currentUser = user
+                return user
+            } catch (err) {
+                if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+                    this.signOut()
+                }
+                throw err
+            }
         },
     },
 })

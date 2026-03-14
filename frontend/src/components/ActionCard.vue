@@ -4,6 +4,7 @@ interface Props {
     description: string
     buttonText: string
     danger?: boolean
+    disabled?: boolean
 }
 
 defineProps<Props>()
@@ -21,6 +22,7 @@ const emit = defineEmits<{
             class="ghost" 
             :class="{ danger }" 
             type="button"
+            :disabled="disabled"
             @click="emit('click')"
         >
             {{ buttonText }}
@@ -55,6 +57,11 @@ const emit = defineEmits<{
     font-family: inherit;
     font-weight: 600;
     cursor: pointer;
+}
+
+.action-card .ghost:disabled {
+    opacity: 0.6;
+    cursor: default;
 }
 
 .action-card .ghost.danger {

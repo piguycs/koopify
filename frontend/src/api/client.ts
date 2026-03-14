@@ -67,4 +67,12 @@ export const apiClient = {
     /// Make a POST request to the `path` with the provided `body`
     post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
         request<T>(path, { ...options, method: "POST", body }),
+
+    /// Make a PATCH request to the `path` with the provided `body`
+    patch: <T>(path: string, body?: unknown, options?: RequestOptions) =>
+        request<T>(path, { ...options, method: "PATCH", body }),
+
+    /// Make a DELETE request to the `path`
+    delete: <T>(path: string, options?: RequestOptions) =>
+        request<T>(path, { ...options, method: "DELETE" }),
 }
