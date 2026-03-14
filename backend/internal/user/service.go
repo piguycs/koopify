@@ -25,6 +25,14 @@ func (us *UserService) GetUserByID(ctx context.Context, id int64) (*UserResponse
 	return us.repository.GetUserByID(ctx, id)
 }
 
+func (us *UserService) ListUsers(ctx context.Context) ([]UserResponse, error) {
+	return us.repository.ListUsers(ctx)
+}
+
+func (us *UserService) UpdateUserAdmin(ctx context.Context, userID int64, admin bool) (*UserResponse, error) {
+	return us.repository.UpdateUserAdmin(ctx, userID, admin)
+}
+
 func (us *UserService) UpdateCurrentUser(
 	ctx context.Context,
 	userID int64,

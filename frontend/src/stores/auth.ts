@@ -130,5 +130,45 @@ export const useAuthStore = defineStore("auth", {
                 throw err
             }
         },
+
+        async listUsers(): Promise<UserResponse[]> {
+            if (!this.token) {
+                throw new ApiError("Not authenticated", 401)
+            }
+
+            return await apiClient.get<UserResponse[]>("/api/v1/users", {
+                authToken: this.token,
+            })
+        },
+
+        async getUserById(id: number): Promise<UserResponse> {
+            if (!this.token) {
+                throw new ApiError("Not authenticated", 401)
+            }
+
+            return await apiClient.get<UserResponse>(`/api/v1/users/${id}`, {
+                authToken: this.token,
+            })
+        },
+
+        async updateUserAdmin(id: number, admin: boolean): Promise<UserResponse> {
+            if (!this.token) {
+                throw new ApiError("Not authenticated", 401)
+            }
+
+            return await apiClient.patch<UserResponse>(`/api/v1/users/${id}/admin`, { admin }, {
+                authToken: this.token,
+            })
+        },
+
+        async triggerPasswordReset(id: number): Promise<{ message: string }> {
+            if (!this.token) {
+                throw new ApiError("Not authenticated", 401)
+            }
+
+            return await apiClient.post<{ message: string }>(`/api/v1/users/${id}/reset_password`, undefined, {
+                authToken: this.token,
+            })
+        },
     },
 })

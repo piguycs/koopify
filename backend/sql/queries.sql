@@ -46,6 +46,12 @@ set requested_deletion_at = null,
 where id = $1
 returning id, email, display_name, password, admin, requested_deletion_at, deletion_scheduled_at;
 
+-- name: UpdateUserAdmin :one
+update users
+set admin = $2
+where id = $1
+returning id, email, display_name, password, admin, requested_deletion_at, deletion_scheduled_at;
+
 -- Products
 -- name: CreateProduct :one
 insert into products (

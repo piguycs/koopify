@@ -28,5 +28,8 @@ func RegisterPrivateRoutes(e *echo.Echo, jwtSecret string, userController *user.
 	private.PATCH("/users/me", userController.UpdateCurrentUser)
 	private.POST("/users/me/deletion", userController.RequestDeletion)
 	private.DELETE("/users/me/deletion", userController.CancelDeletion)
+	private.GET("/users", userController.ListUsers)
 	private.GET("/users/:id", userController.GetUserByID)
+	private.PATCH("/users/:id/admin", userController.UpdateUserAdmin)
+	private.POST("/users/:id/reset_password", userController.TriggerPasswordReset)
 }

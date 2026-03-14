@@ -17,7 +17,9 @@ type UserRepository interface {
 	CreateUser(ctx context.Context, user CreateUserRequest) (*UserResponse, error)
 	LoginUser(ctx context.Context, user LoginUserRequest) (*UserResponse, error)
 	GetUserByID(ctx context.Context, id int64) (*UserResponse, error)
+	ListUsers(ctx context.Context) ([]UserResponse, error)
 	UpdateUser(ctx context.Context, id int64, displayName string, email string) (*UserResponse, error)
+	UpdateUserAdmin(ctx context.Context, id int64, admin bool) (*UserResponse, error)
 	GetDeletionPolicy(ctx context.Context) (int32, error)
 	RequestUserDeletion(ctx context.Context, id int64, delayHours int32) (*UserResponse, error)
 	CancelUserDeletion(ctx context.Context, id int64) (*UserResponse, error)
@@ -93,6 +95,19 @@ func (pgur PGUserRepository) GetUserByID(ctx context.Context, id int64) (*UserRe
 	return &userResp, nil
 }
 
+func (pgur PGUserRepository) ListUsers(ctx context.Context) ([]UserResponse, error) {
+	dbUsers, err := pgur.queries.ListUsers(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	users := make([]UserResponse, len(dbUsers))
+	for i, dbUser := range dbUsers {
+		users[i] = UserResponseFrom(dbUser)
+	}
+	return users, nil
+}
+
 func (pgur PGUserRepository) UpdateUser(
 	ctx context.Context,
 	id int64,
@@ -111,6 +126,22 @@ func (pgur PGUserRepository) UpdateUser(
 		if errors.As(err, &pgErr) && pgErr.Code == PG_UNIQUE_VIOLATION {
 			return nil, ErrUserExists
 		}
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	userResp := UserResponseFrom(dbUser)
+	return &userResp, nil
+}
+
+func (pgur PGUserRepository) UpdateUserAdmin(ctx context.Context, id int64, admin bool) (*UserResponse, error) {
+	dbUser, err := pgur.queries.UpdateUserAdmin(ctx, db.UpdateUserAdminParams{
+		ID:    id,
+		Admin: admin,
+	})
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrUserNotFound
 		}

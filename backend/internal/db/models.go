@@ -8,9 +8,37 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Category struct {
+	ID        int64
+	Name      string
+	Slug      string
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+}
+
 type DeletionPolicy struct {
 	ID                 bool
 	DeletionDelayHours int32
+}
+
+type Product struct {
+	ID              int64
+	Name            string
+	Slug            string
+	Description     string
+	ImageUrl        pgtype.Text
+	PriceEurCents   int32
+	DiscountPercent pgtype.Int4
+	InventoryCount  int32
+	InStock         bool
+	IsActive        bool
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+}
+
+type ProductCategory struct {
+	ProductID  int64
+	CategoryID int64
 }
 
 type User struct {

@@ -56,6 +56,21 @@ func (uc *UserController) GetPasswordPolicy(ctx *echo.Context) error {
 	})
 }
 
+func (uc *UserController) TriggerPasswordReset(ctx *echo.Context) error {
+	if !auth.IsAdminFromToken(ctx) {
+		return ctx.JSON(http.StatusForbidden, response.NewError("forbidden", "admin access required"))
+	}
+
+	_, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, response.NewError("invalid_request", "invalid user id"))
+	}
+
+	return ctx.JSON(http.StatusOK, map[string]string{
+		"message": "password reset triggered (stub)",
+	})
+}
+
 func (uc *UserController) LoginUser(ctx *echo.Context) error {
 	user, err := internal.BindAndValidate[LoginUserRequest](ctx)
 	if err != nil {
@@ -183,6 +198,19 @@ func (uc *UserController) CancelDeletion(ctx *echo.Context) error {
 	return ctx.JSON(http.StatusOK, resp)
 }
 
+func (uc *UserController) ListUsers(ctx *echo.Context) error {
+	if !auth.IsAdminFromToken(ctx) {
+		return ctx.JSON(http.StatusForbidden, response.NewError("forbidden", "admin access required"))
+	}
+
+	resp, err := uc.service.ListUsers(ctx.Request().Context())
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to fetch users"))
+	}
+
+	return ctx.JSON(http.StatusOK, resp)
+}
+
 func (uc *UserController) GetUserByID(ctx *echo.Context) error {
 	if !auth.IsAdminFromToken(ctx) {
 		return ctx.JSON(http.StatusForbidden, response.NewError("forbidden", "admin access required"))
@@ -200,6 +228,38 @@ func (uc *UserController) GetUserByID(ctx *echo.Context) error {
 			return ctx.JSON(http.StatusNotFound, response.NewError("user_not_found", err.Error()))
 		default:
 			return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to fetch user"))
+		}
+	}
+
+	return ctx.JSON(http.StatusOK, resp)
+}
+
+type UpdateUserAdminRequest struct {
+	Admin bool `json:"admin"`
+}
+
+func (uc *UserController) UpdateUserAdmin(ctx *echo.Context) error {
+	if !auth.IsAdminFromToken(ctx) {
+		return ctx.JSON(http.StatusForbidden, response.NewError("forbidden", "admin access required"))
+	}
+
+	userID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, response.NewError("invalid_request", "invalid user id"))
+	}
+
+	req, err := internal.BindAndValidate[UpdateUserAdminRequest](ctx)
+	if err != nil {
+		return err
+	}
+
+	resp, err := uc.service.UpdateUserAdmin(ctx.Request().Context(), userID, req.Admin)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrUserNotFound):
+			return ctx.JSON(http.StatusNotFound, response.NewError("user_not_found", err.Error()))
+		default:
+			return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to update user admin status"))
 		}
 	}
 
