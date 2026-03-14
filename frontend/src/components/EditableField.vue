@@ -13,7 +13,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-    (e: "save", value: string): void
+    save: [value: string],
 }>()
 
 const editing = ref(false)
