@@ -8,7 +8,7 @@ import ActionCard from "@/components/ActionCard.vue"
 const authStore = useAuthStore()
 
 const userDisplayName = computed(() => authStore.currentUser?.displayName)
-const userEmail = computed(() => null)
+const userEmail = computed(() => authStore.currentUser?.email)
 
 const saveDisplayName = (value: string) => {
     console.info("WIP: display name updated", value)
