@@ -125,11 +125,11 @@ onMounted(async () => {
 
 .account-dropdown {
     position: absolute;
-    top: calc(100% + 8px);
+    top: 100%;
     left: 0;
     background: var(--panel);
     border: 1px solid var(--border);
-    padding: 6px;
+    padding: 8px 6px;
     display: none;
     min-width: 100%;
     z-index: 10;
