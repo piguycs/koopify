@@ -12,6 +12,7 @@ func RegisterPublicRoutes(e *echo.Echo, userController *user.UserController) {
 	public := e.Group("/public_api/v1")
 	public.POST("/login", userController.LoginUser)
 	public.POST("/sign_up", userController.CreateUser)
+	public.GET("/password_policy", userController.GetPasswordPolicy)
 }
 
 func RegisterPrivateRoutes(e *echo.Echo, jwtSecret string, userController *user.UserController) {
@@ -24,5 +25,8 @@ func RegisterPrivateRoutes(e *echo.Echo, jwtSecret string, userController *user.
 
 	private := e.Group("/api/v1", jwtMiddleware)
 	private.GET("/users/me", userController.GetCurrentUser)
+	private.PATCH("/users/me", userController.UpdateCurrentUser)
+	private.POST("/users/me/deletion", userController.RequestDeletion)
+	private.DELETE("/users/me/deletion", userController.CancelDeletion)
 	private.GET("/users/:id", userController.GetUserByID)
 }

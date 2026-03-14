@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -16,6 +17,10 @@ type UserRepository interface {
 	CreateUser(ctx context.Context, user CreateUserRequest) (*UserResponse, error)
 	LoginUser(ctx context.Context, user LoginUserRequest) (*UserResponse, error)
 	GetUserByID(ctx context.Context, id int64) (*UserResponse, error)
+	UpdateUser(ctx context.Context, id int64, displayName string, email string) (*UserResponse, error)
+	GetDeletionPolicy(ctx context.Context) (int32, error)
+	RequestUserDeletion(ctx context.Context, id int64, delayHours int32) (*UserResponse, error)
+	CancelUserDeletion(ctx context.Context, id int64) (*UserResponse, error)
 }
 
 type PGUserRepository struct {
@@ -64,12 +69,94 @@ func (pgur PGUserRepository) LoginUser(ctx context.Context, user LoginUserReques
 		return nil, ErrInvalidCredentials
 	}
 
+	if dbUser.DeletionScheduledAt.Valid {
+		now := time.Now()
+		if !dbUser.DeletionScheduledAt.Time.After(now) {
+			return nil, ErrAccountDeletionScheduled
+		}
+	}
+
 	userResp := UserResponseFrom(dbUser)
 	return &userResp, nil
 }
 
 func (pgur PGUserRepository) GetUserByID(ctx context.Context, id int64) (*UserResponse, error) {
 	dbUser, err := pgur.queries.GetUser(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	userResp := UserResponseFrom(dbUser)
+	return &userResp, nil
+}
+
+func (pgur PGUserRepository) UpdateUser(
+	ctx context.Context,
+	id int64,
+	displayName string,
+	email string,
+) (*UserResponse, error) {
+	params := db.UpdateUserParams{
+		ID:          id,
+		DisplayName: displayName,
+		Email:       email,
+	}
+
+	dbUser, err := pgur.queries.UpdateUser(ctx, params)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == PG_UNIQUE_VIOLATION {
+			return nil, ErrUserExists
+		}
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	userResp := UserResponseFrom(dbUser)
+	return &userResp, nil
+}
+
+func (pgur PGUserRepository) GetDeletionPolicy(ctx context.Context) (int32, error) {
+	policy, err := pgur.queries.GetDeletionPolicy(ctx)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrDeletionPolicyNotFound
+		}
+		return 0, err
+	}
+	return policy.DeletionDelayHours, nil
+}
+
+func (pgur PGUserRepository) RequestUserDeletion(
+	ctx context.Context,
+	id int64,
+	delayHours int32,
+) (*UserResponse, error) {
+	dbUser, err := pgur.queries.RequestUserDeletion(ctx, db.RequestUserDeletionParams{
+		ID:    id,
+		Hours: delayHours,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	userResp := UserResponseFrom(dbUser)
+	return &userResp, nil
+}
+
+func (pgur PGUserRepository) CancelUserDeletion(
+	ctx context.Context,
+	id int64,
+) (*UserResponse, error) {
+	dbUser, err := pgur.queries.CancelUserDeletion(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrUserNotFound
