@@ -4,10 +4,21 @@
 
 package db
 
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
+type DeletionPolicy struct {
+	ID                 bool
+	DeletionDelayHours int32
+}
+
 type User struct {
-	ID          int64
-	Email       string
-	DisplayName string
-	Password    string
-	Admin       bool
+	ID                  int64
+	Email               string
+	DisplayName         string
+	Password            string
+	Admin               bool
+	RequestedDeletionAt pgtype.Timestamptz
+	DeletionScheduledAt pgtype.Timestamptz
 }

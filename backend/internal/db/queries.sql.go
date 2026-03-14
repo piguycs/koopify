@@ -9,12 +9,35 @@ import (
 	"context"
 )
 
+const cancelUserDeletion = `-- name: CancelUserDeletion :one
+update users
+set requested_deletion_at = null,
+    deletion_scheduled_at = null
+where id = $1
+returning id, email, display_name, password, admin, requested_deletion_at, deletion_scheduled_at
+`
+
+func (q *Queries) CancelUserDeletion(ctx context.Context, id int64) (User, error) {
+	row := q.db.QueryRow(ctx, cancelUserDeletion, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.DisplayName,
+		&i.Password,
+		&i.Admin,
+		&i.RequestedDeletionAt,
+		&i.DeletionScheduledAt,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :one
 insert into users (
     email, display_name, password
 ) values (
     $1, $2, $3
-) returning id, email, display_name, password, admin
+) returning id, email, display_name, password, admin, requested_deletion_at, deletion_scheduled_at
 `
 
 type CreateUserParams struct {
@@ -32,6 +55,8 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.DisplayName,
 		&i.Password,
 		&i.Admin,
+		&i.RequestedDeletionAt,
+		&i.DeletionScheduledAt,
 	)
 	return i, err
 }
@@ -46,8 +71,20 @@ func (q *Queries) DeleteUser(ctx context.Context, id int64) error {
 	return err
 }
 
+const getDeletionPolicy = `-- name: GetDeletionPolicy :one
+select id, deletion_delay_hours from deletion_policy
+    limit 1
+`
+
+func (q *Queries) GetDeletionPolicy(ctx context.Context) (DeletionPolicy, error) {
+	row := q.db.QueryRow(ctx, getDeletionPolicy)
+	var i DeletionPolicy
+	err := row.Scan(&i.ID, &i.DeletionDelayHours)
+	return i, err
+}
+
 const getUser = `-- name: GetUser :one
-select id, email, display_name, password, admin from users
+select id, email, display_name, password, admin, requested_deletion_at, deletion_scheduled_at from users
     where id = $1 limit 1
 `
 
@@ -60,12 +97,14 @@ func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
 		&i.DisplayName,
 		&i.Password,
 		&i.Admin,
+		&i.RequestedDeletionAt,
+		&i.DeletionScheduledAt,
 	)
 	return i, err
 }
 
 const getUserWithEmail = `-- name: GetUserWithEmail :one
-select id, email, display_name, password, admin from users
+select id, email, display_name, password, admin, requested_deletion_at, deletion_scheduled_at from users
 	where email = $1 limit 1
 `
 
@@ -78,12 +117,14 @@ func (q *Queries) GetUserWithEmail(ctx context.Context, email string) (User, err
 		&i.DisplayName,
 		&i.Password,
 		&i.Admin,
+		&i.RequestedDeletionAt,
+		&i.DeletionScheduledAt,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-select id, email, display_name, password, admin from users
+select id, email, display_name, password, admin, requested_deletion_at, deletion_scheduled_at from users
     order by id
 `
 
@@ -102,6 +143,8 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.DisplayName,
 			&i.Password,
 			&i.Admin,
+			&i.RequestedDeletionAt,
+			&i.DeletionScheduledAt,
 		); err != nil {
 			return nil, err
 		}
@@ -111,4 +154,61 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const requestUserDeletion = `-- name: RequestUserDeletion :one
+update users
+set requested_deletion_at = now(),
+    deletion_scheduled_at = now() + make_interval(hours => $2)
+where id = $1
+returning id, email, display_name, password, admin, requested_deletion_at, deletion_scheduled_at
+`
+
+type RequestUserDeletionParams struct {
+	ID    int64
+	Hours int32
+}
+
+func (q *Queries) RequestUserDeletion(ctx context.Context, arg RequestUserDeletionParams) (User, error) {
+	row := q.db.QueryRow(ctx, requestUserDeletion, arg.ID, arg.Hours)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.DisplayName,
+		&i.Password,
+		&i.Admin,
+		&i.RequestedDeletionAt,
+		&i.DeletionScheduledAt,
+	)
+	return i, err
+}
+
+const updateUser = `-- name: UpdateUser :one
+update users
+set display_name = $2,
+    email = $3
+where id = $1
+returning id, email, display_name, password, admin, requested_deletion_at, deletion_scheduled_at
+`
+
+type UpdateUserParams struct {
+	ID          int64
+	DisplayName string
+	Email       string
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUser, arg.ID, arg.DisplayName, arg.Email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.DisplayName,
+		&i.Password,
+		&i.Admin,
+		&i.RequestedDeletionAt,
+		&i.DeletionScheduledAt,
+	)
+	return i, err
 }
