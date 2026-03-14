@@ -1,20 +1,4 @@
-create table users (
-    id           bigserial primary key,
-    email        varchar   unique not null,
-    display_name varchar   not null,
-    password     varchar   not null,
-    admin        boolean   not null default false,
-    requested_deletion_at timestamptz,
-    deletion_scheduled_at timestamptz
-);
-
-create table deletion_policy (
-    id boolean primary key default true,
-    deletion_delay_hours integer not null default 24,
-    check (id)
-);
-
-create table products (
+create table if not exists products (
     id               bigserial primary key,
     name             varchar   not null,
     slug             varchar   unique not null,
@@ -29,7 +13,7 @@ create table products (
     updated_at       timestamptz not null default now()
 );
 
-create table categories (
+create table if not exists categories (
     id          bigserial primary key,
     name        varchar   not null,
     slug        varchar   unique not null,
@@ -37,7 +21,7 @@ create table categories (
     updated_at  timestamptz not null default now()
 );
 
-create table product_categories (
+create table if not exists product_categories (
     product_id   bigint not null references products(id) on delete cascade,
     category_id  bigint not null references categories(id) on delete cascade,
     primary key (product_id, category_id)
