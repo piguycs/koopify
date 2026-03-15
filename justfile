@@ -3,6 +3,11 @@
 run-frontend:
     bun run dev
 
+[group("frontend")]
+[working-directory: "frontend"]
+check-frontend:
+    bun run type-check
+
 # Generate Go code from schemas
 [group("backend")]
 [working-directory: "backend"]

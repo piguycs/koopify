@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue"
 import { RouterLink, useRouter } from "vue-router"
 import AppLayout from "@/layouts/AppLayout.vue"
 import Button from "@/components/Button.vue"
+import Input from "@/components/Input.vue"
 import { ApiError, apiClient } from "@/api/client"
 import { useAuthStore } from "@/stores/auth"
 
@@ -73,18 +74,9 @@ const handleSubmit = async () => {
                 </div>
 
                 <form class="auth-form" @submit.prevent="handleSubmit">
-                    <label class="field">
-                        <span>Display name</span>
-                        <input v-model="displayName" type="text" autocomplete="name" required />
-                    </label>
-                    <label class="field">
-                        <span>Email</span>
-                        <input v-model="email" type="email" autocomplete="email" required />
-                    </label>
-                    <label class="field">
-                        <span>Password</span>
-                        <input v-model="password" type="password" autocomplete="new-password" required />
-                    </label>
+                    <Input v-model="displayName" label="Display name" type="text" autocomplete="name" variant="dark" required />
+                    <Input v-model="email" label="Email" type="email" autocomplete="email" variant="dark" required />
+                    <Input v-model="password" label="Password" type="password" autocomplete="new-password" variant="dark" required />
                     <p v-if="policyMessage" class="policy">{{ policyMessage }}</p>
                     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
                     <Button
@@ -146,20 +138,8 @@ const handleSubmit = async () => {
     margin-top: 20px;
 }
 
-.field {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    font-size: 13px;
-    color: var(--muted);
-}
-
-.field input {
-    background: var(--panel-dark);
-    border: 1px solid var(--border);
-    padding: 12px 14px;
-    color: var(--text);
-    font-family: inherit;
+.error :deep(.input-error) {
+    margin: 0;
 }
 
 .error {
