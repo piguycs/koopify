@@ -41,22 +41,13 @@ onMounted(async () => {
                     <div class="account-menu">
                         <RouterLink class="ghost" to="/account">View Account</RouterLink>
                         <div class="account-dropdown">
-                            <Button
-                                variant="ghost"
-                                type="button"
-                                @click="handleSignOut"
-                            >
+                            <Button variant="ghost" type="button" @click="handleSignOut">
                                 Sign out
                             </Button>
                         </div>
                     </div>
                 </template>
-                <Button
-                    variant="primary"
-                    type="button"
-                >
-                    Cart ({{ appStore.cartCount }})
-                </Button>
+                <Button variant="primary" type="button"> Cart ({{ appStore.cartCount }}) </Button>
             </div>
         </header>
 
@@ -126,7 +117,6 @@ onMounted(async () => {
     align-items: center;
     flex-wrap: wrap;
 }
-
 
 .account-menu {
     position: relative;

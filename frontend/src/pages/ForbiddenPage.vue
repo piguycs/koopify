@@ -20,7 +20,10 @@ const redirectTarget = computed(() => {
             <h1>Authentication required</h1>
             <p class="subtle">Sign in to continue to the requested page.</p>
             <div class="actions">
-                <RouterLink class="primary" :to="{ path: '/sign-in', query: { redirect: redirectTarget } }">
+                <RouterLink
+                    class="primary"
+                    :to="{ path: '/sign-in', query: { redirect: redirectTarget } }"
+                >
                     Sign in
                 </RouterLink>
                 <RouterLink class="ghost" to="/">Back to home</RouterLink>

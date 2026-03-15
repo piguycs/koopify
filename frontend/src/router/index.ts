@@ -22,16 +22,16 @@ const router = createRouter({
         // authenticated route
         { path: "/account", name: "account", component: AccountPage, meta: { requiresAuth: true } },
 
-        { 
-            path: "/admin/inventory", 
-            name: "admin-inventory", 
-            component: AdminInventoryPage, 
+        {
+            path: "/admin/inventory",
+            name: "admin-inventory",
+            component: AdminInventoryPage,
             meta: { requiresAuth: true, requiresAdmin: true },
         },
-        { 
-            path: "/admin/users", 
-            name: "admin-users", 
-            component: AdminUsersPage, 
+        {
+            path: "/admin/users",
+            name: "admin-users",
+            component: AdminUsersPage,
             meta: { requiresAuth: true, requiresAdmin: true },
         },
 
@@ -40,7 +40,7 @@ const router = createRouter({
     ],
 })
 
-router.beforeEach(async (to) => {
+router.beforeEach(async to => {
     const authStore = useAuthStore()
     if (authStore.token && !authStore.currentUser) {
         try {

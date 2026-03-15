@@ -40,7 +40,7 @@ function apiError(err: unknown, message: string) {
     }
 }
 
-async function saveField(payload: { displayName?: string; email?: string} , success: string) {
+async function saveField(payload: { displayName?: string; email?: string }, success: string) {
     if (isSaving.value) {
         return
     }
@@ -63,8 +63,7 @@ const saveDisplayName = (value: string) =>
     saveField({ displayName: value }, "Display name updated.")
 
 const saveEmail = (value: string) =>
-    value !== currentUser.value?.email &&
-    saveField({ email: value }, "Email updated.")
+    value !== currentUser.value?.email && saveField({ email: value }, "Email updated.")
 
 const deletionScheduledAt = computed(() => {
     const value = authStore.currentUser?.deletionScheduledAt
@@ -73,10 +72,10 @@ const deletionScheduledAt = computed(() => {
 
 const deletionScheduledLabel = computed(() =>
     deletionScheduledAt.value
-        ? deletionScheduledAt.value.toLocaleString(undefined, { 
-            hour12: false,
-            timeZoneName: "short" 
-        })
+        ? deletionScheduledAt.value.toLocaleString(undefined, {
+              hour12: false,
+              timeZoneName: "short",
+          })
         : null,
 )
 
@@ -125,7 +124,8 @@ async function confirmDeletionRequest() {
 
     try {
         await authStore.requestDeletion()
-        statusMessage.value = "Deletion requested. You can cancel until the scheduled deletion time."
+        statusMessage.value =
+            "Deletion requested. You can cancel until the scheduled deletion time."
         showDeletionModal.value = false
     } catch (err) {
         apiError(err, "Account deletion update failed")
@@ -143,7 +143,6 @@ const goToAdminInventory = () => {
 const goToAdminUsers = () => {
     router.push("/admin/users")
 }
-
 </script>
 
 <template>
@@ -183,11 +182,7 @@ const goToAdminUsers = () => {
                         :value="userDisplayName"
                         @save="saveDisplayName"
                     />
-                    <EditableField
-                        label="Email"
-                        :value="userEmail"
-                        @save="saveEmail"
-                    />
+                    <EditableField label="Email" :value="userEmail" @save="saveEmail" />
                     <ActionCard
                         title="Reset password"
                         description="WIP: Password reset flow is not wired yet."
@@ -213,7 +208,12 @@ const goToAdminUsers = () => {
         >
             <template #actions>
                 <Button variant="ghost" type="button" @click="closeDeletionModal">Cancel</Button>
-                <Button variant="danger" type="button" @click="confirmDeletionRequest" :disabled="isDeleting">
+                <Button
+                    variant="danger"
+                    type="button"
+                    @click="confirmDeletionRequest"
+                    :disabled="isDeleting"
+                >
                     Request deletion
                 </Button>
             </template>

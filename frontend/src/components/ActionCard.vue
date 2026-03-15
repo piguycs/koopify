@@ -20,7 +20,7 @@ const emit = defineEmits<{
     <div class="action-card">
         <h2>{{ title }}</h2>
         <p>{{ description }}</p>
-        <Button 
+        <Button
             :variant="danger ? 'danger' : 'ghost'"
             type="button"
             :disabled="disabled"
@@ -49,6 +49,4 @@ const emit = defineEmits<{
     color: var(--muted);
     font-size: 13px;
 }
-
-
 </style>

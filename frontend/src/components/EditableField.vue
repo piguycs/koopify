@@ -3,9 +3,9 @@ import { ref, watch } from "vue"
 import Button from "@/components/Button.vue"
 
 interface Props {
-  label: string
-  value?: string | null
-  type?: string
+    label: string
+    value?: string | null
+    type?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -14,7 +14,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-    save: [value: string],
+    save: [value: string]
 }>()
 
 const editing = ref(false)
@@ -22,7 +22,7 @@ const localValue = ref<string | null>(null)
 
 watch(
     () => props.value,
-    (val) => {
+    val => {
         if (!editing.value) localValue.value = val
     },
     { immediate: true },
@@ -63,14 +63,10 @@ const save = () => {
                 @keydown.esc="cancelEdit"
             />
             <div v-if="!editing" class="detail-actions">
-                <Button variant="link" size="small" type="button" @click="startEdit">
-                    Edit
-                </Button>
+                <Button variant="link" size="small" type="button" @click="startEdit"> Edit </Button>
             </div>
             <div v-else class="detail-actions">
-                <Button variant="ghost" size="small" type="button" @click="save">
-                    Save
-                </Button>
+                <Button variant="ghost" size="small" type="button" @click="save"> Save </Button>
                 <Button variant="ghost" size="small" type="button" @click="cancelEdit">
                     Cancel
                 </Button>
@@ -120,6 +116,4 @@ const save = () => {
     font-family: inherit;
     width: 100%;
 }
-
-
 </style>

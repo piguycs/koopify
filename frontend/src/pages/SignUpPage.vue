@@ -74,9 +74,30 @@ const handleSubmit = async () => {
                 </div>
 
                 <form class="auth-form" @submit.prevent="handleSubmit">
-                    <Input v-model="displayName" label="Display name" type="text" autocomplete="name" variant="dark" required />
-                    <Input v-model="email" label="Email" type="email" autocomplete="email" variant="dark" required />
-                    <Input v-model="password" label="Password" type="password" autocomplete="new-password" variant="dark" required />
+                    <Input
+                        v-model="displayName"
+                        label="Display name"
+                        type="text"
+                        autocomplete="name"
+                        variant="dark"
+                        required
+                    />
+                    <Input
+                        v-model="email"
+                        label="Email"
+                        type="email"
+                        autocomplete="email"
+                        variant="dark"
+                        required
+                    />
+                    <Input
+                        v-model="password"
+                        label="Password"
+                        type="password"
+                        autocomplete="new-password"
+                        variant="dark"
+                        required
+                    />
                     <p v-if="policyMessage" class="policy">{{ policyMessage }}</p>
                     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
                     <Button
