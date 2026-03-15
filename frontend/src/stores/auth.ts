@@ -27,7 +27,7 @@ export const useAuthStore = defineStore("auth", {
         currentUser: null as UserResponse | null,
     }),
     getters: {
-        isAuthenticated: (state) => Boolean(state.token),
+        isAuthenticated: state => Boolean(state.token),
     },
     actions: {
         setToken(token: string) {
@@ -100,9 +100,13 @@ export const useAuthStore = defineStore("auth", {
             }
 
             try {
-                const user = await apiClient.post<UserResponse>("/api/v1/users/me/deletion", undefined, {
-                    authToken: this.token,
-                })
+                const user = await apiClient.post<UserResponse>(
+                    "/api/v1/users/me/deletion",
+                    undefined,
+                    {
+                        authToken: this.token,
+                    },
+                )
                 this.currentUser = user
                 return user
             } catch (err) {
@@ -156,9 +160,13 @@ export const useAuthStore = defineStore("auth", {
                 throw new ApiError("Not authenticated", 401)
             }
 
-            return await apiClient.patch<UserResponse>(`/api/v1/users/${id}/admin`, { admin }, {
-                authToken: this.token,
-            })
+            return await apiClient.patch<UserResponse>(
+                `/api/v1/users/${id}/admin`,
+                { admin },
+                {
+                    authToken: this.token,
+                },
+            )
         },
 
         async triggerPasswordReset(id: number): Promise<{ message: string }> {
@@ -166,9 +174,13 @@ export const useAuthStore = defineStore("auth", {
                 throw new ApiError("Not authenticated", 401)
             }
 
-            return await apiClient.post<{ message: string }>(`/api/v1/users/${id}/reset_password`, undefined, {
-                authToken: this.token,
-            })
+            return await apiClient.post<{ message: string }>(
+                `/api/v1/users/${id}/reset_password`,
+                undefined,
+                {
+                    authToken: this.token,
+                },
+            )
         },
 
         async requestUserDeletionAdmin(id: number): Promise<UserResponse> {
@@ -177,6 +189,26 @@ export const useAuthStore = defineStore("auth", {
             }
 
             return await apiClient.post<UserResponse>(`/api/v1/users/${id}/deletion`, undefined, {
+                authToken: this.token,
+            })
+        },
+
+        async cancelUserDeletionAdmin(id: number): Promise<UserResponse> {
+            if (!this.token) {
+                throw new ApiError("Not authenticated", 401)
+            }
+
+            return await apiClient.delete<UserResponse>(`/api/v1/users/${id}/deletion`, {
+                authToken: this.token,
+            })
+        },
+
+        async updateUserAdminDetails(id: number, update: UpdateUserPayload): Promise<UserResponse> {
+            if (!this.token) {
+                throw new ApiError("Not authenticated", 401)
+            }
+
+            return await apiClient.patch<UserResponse>(`/api/v1/users/${id}`, update, {
                 authToken: this.token,
             })
         },

@@ -10,6 +10,8 @@ import Input from "@/components/Input.vue"
 import { ApiError } from "@/api/client"
 import type { UserResponse } from "@/stores/auth"
 
+type SortableKey = "id" | "displayName" | "email" | "admin" | "deletionScheduledAt"
+
 enum AdminModalState {
     Disabled,
     Promoting,
@@ -27,7 +29,7 @@ const successMessage = ref("")
 // these are for filtering/sorting the rows
 const searchQuery = ref("")
 const sortKey = ref<keyof UserResponse | null>(null)
-const sortDirection = ref<'asc' | 'desc'>('asc')
+const sortDirection = ref<"asc" | "desc">("asc")
 
 // Admin toggle modal state
 const adminModalState = ref(AdminModalState.Disabled)
@@ -42,7 +44,7 @@ function closeAdminModal() {
 
 async function confirmAdminToggle() {
     if (!userToToggle.value) return
-    
+
     const user = userToToggle.value
     closeAdminModal()
     await performToggleAdmin(user)
@@ -58,7 +60,7 @@ function openDeleteModal(user: UserResponse) {
         errorMessageToast(null, "You cannot delete yourself")
         return
     }
-    
+
     userToDelete.value = user
     adminModalState.value = AdminModalState.Deleting
 }
@@ -70,26 +72,109 @@ function closeDeleteModal() {
 
 async function confirmDelete() {
     if (!userToDelete.value) return
-    
+
     const user = userToDelete.value
     closeDeleteModal()
-    
+
     try {
         const updated = await authStore.requestUserDeletionAdmin(user.id)
-        
+
         // Update the user in the list
         const index = users.value.findIndex(u => u.id === updated.id)
         if (index !== -1) {
             users.value[index] = updated
         }
-        
+
         successMessageToast(`User ${user.displayName} scheduled for deletion`)
     } catch (err) {
         errorMessageToast(err, "Failed to schedule user deletion")
     }
 }
 
-type SortableKey = 'id' | 'displayName' | 'email' | 'admin' | 'deletionScheduledAt'
+// Cancel deletion modal state
+const userToCancelDeletion = ref<UserResponse | null>(null)
+const isCancelDeletionModalOpen = computed(() => userToCancelDeletion.value !== null)
+
+function openCancelDeletionModal(user: UserResponse) {
+    userToCancelDeletion.value = user
+}
+
+function closeCancelDeletionModal() {
+    userToCancelDeletion.value = null
+}
+
+async function confirmCancelDeletion() {
+    if (!userToCancelDeletion.value) return
+
+    const user = userToCancelDeletion.value
+    closeCancelDeletionModal()
+
+    try {
+        const updated = await authStore.cancelUserDeletionAdmin(user.id)
+
+        // Update the user in the list
+        const index = users.value.findIndex(u => u.id === updated.id)
+        if (index !== -1) {
+            users.value[index] = updated
+        }
+
+        successMessageToast(`Deletion cancelled for user ${user.displayName}`)
+    } catch (err) {
+        errorMessageToast(err, "Failed to cancel user deletion")
+    }
+}
+
+// Edit user modal state
+const userToEdit = ref<UserResponse | null>(null)
+const editDisplayName = ref("")
+const editEmail = ref("")
+const isEditModalOpen = computed(() => userToEdit.value !== null)
+const isSavingEdit = ref(false)
+
+function openEditModal(user: UserResponse) {
+    // Cannot edit admin users
+    if (user.admin) {
+        errorMessageToast(null, "Cannot edit admin users")
+        return
+    }
+
+    userToEdit.value = user
+    editDisplayName.value = user.displayName
+    editEmail.value = user.email
+}
+
+function closeEditModal() {
+    userToEdit.value = null
+    editDisplayName.value = ""
+    editEmail.value = ""
+}
+
+async function confirmEdit() {
+    if (!userToEdit.value) return
+
+    const user = userToEdit.value
+    isSavingEdit.value = true
+
+    try {
+        const updated = await authStore.updateUserAdminDetails(user.id, {
+            displayName: editDisplayName.value,
+            email: editEmail.value,
+        })
+
+        // Update the user in the list
+        const index = users.value.findIndex(u => u.id === updated.id)
+        if (index !== -1) {
+            users.value[index] = updated
+        }
+
+        closeEditModal()
+        successMessageToast(`User ${user.displayName} updated successfully`)
+    } catch (err) {
+        errorMessageToast(err, "Failed to update user")
+    } finally {
+        isSavingEdit.value = false
+    }
+}
 
 function clearSearch() {
     searchQuery.value = ""
@@ -97,32 +182,33 @@ function clearSearch() {
 
 const filteredUsers = computed(() => {
     if (!searchQuery.value.trim()) return users.value
-    
+
     const query = searchQuery.value.toLowerCase().trim()
-    return users.value.filter(user => 
-        user.displayName.toLowerCase().includes(query) ||
-        user.email.toLowerCase().includes(query)
+    return users.value.filter(
+        user =>
+            user.displayName.toLowerCase().includes(query) ||
+            user.email.toLowerCase().includes(query),
     )
 })
 
 function toggleSort(key: SortableKey) {
     if (sortKey.value === key) {
         // Cycle: asc -> desc -> null (default)
-        if (sortDirection.value === 'asc') {
-            sortDirection.value = 'desc'
+        if (sortDirection.value === "asc") {
+            sortDirection.value = "desc"
         } else {
             sortKey.value = null
         }
     } else {
         // New column, default to ascending
         sortKey.value = key
-        sortDirection.value = 'asc'
+        sortDirection.value = "asc"
     }
 }
 
 function getSortIndicator(key: SortableKey): string {
-    if (sortKey.value !== key) return ''
-    return sortDirection.value === 'asc' ? ' ▲' : ' ▼'
+    if (sortKey.value !== key) return ""
+    return sortDirection.value === "asc" ? " ▲" : " ▼"
 }
 
 const sortedUsers = computed(() => {
@@ -136,17 +222,17 @@ const sortedUsers = computed(() => {
         let valB = b[key]
 
         // Handle null/undefined values
-        if (valA === null || valA === undefined) valA = ''
-        if (valB === null || valB === undefined) valB = ''
+        if (valA === null || valA === undefined) valA = ""
+        if (valB === null || valB === undefined) valB = ""
 
         // Convert to comparable values
-        if (typeof valA === 'string' && typeof valB === 'string') {
+        if (typeof valA === "string" && typeof valB === "string") {
             valA = valA.toLowerCase()
             valB = valB.toLowerCase()
         }
 
-        if (valA < valB) return dir === 'asc' ? -1 : 1
-        if (valA > valB) return dir === 'asc' ? 1 : -1
+        if (valA < valB) return dir === "asc" ? -1 : 1
+        if (valA > valB) return dir === "asc" ? 1 : -1
         return 0
     })
 })
@@ -185,13 +271,13 @@ async function loadUsers() {
 
 function formatDate(dateStr: string) {
     return new Date(dateStr).toLocaleString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
         hour12: false,
-        timeZoneName: 'short'
+        timeZoneName: "short",
     })
 }
 
@@ -199,10 +285,7 @@ async function performToggleAdmin(user: UserResponse) {
     clearMessages()
 
     try {
-        const updated = await authStore.updateUserAdmin(
-            user.id,
-            !user.admin
-        )
+        const updated = await authStore.updateUserAdmin(user.id, !user.admin)
 
         const index = users.value.findIndex(u => u.id === updated.id)
         if (index !== -1) {
@@ -221,7 +304,7 @@ function toggleAdmin(user: UserResponse) {
         errorMessageToast(null, "You cannot demote yourself")
         return
     }
-    
+
     userToToggle.value = user
     if (adminModalState.value == AdminModalState.Disabled) {
         if (user.admin) {
@@ -261,7 +344,7 @@ onMounted(() => {
             <div v-if="errorMessage" class="toast error">{{ errorMessage }}</div>
 
             <div v-if="isLoading" class="loading">Loading users</div>
-            
+
             <div v-else class="table-wrapper">
                 <div class="table-controls">
                     <div class="search-box">
@@ -271,115 +354,131 @@ onMounted(() => {
                             placeholder="Search by name or email"
                             min-width="240px"
                         />
-                        <Button
-                            v-if="searchQuery"
-                            variant="ghost"
-                            @click="clearSearch"
-                        >
+                        <Button v-if="searchQuery" variant="ghost" @click="clearSearch">
                             Clear
                         </Button>
                     </div>
                     <div class="results-count">
-                        {{ sortedUsers.length }} user{{ sortedUsers.length === 1 ? '' : 's' }}
+                        {{ sortedUsers.length }} user{{ sortedUsers.length === 1 ? "" : "s" }}
                         <span v-if="searchQuery">found</span>
                     </div>
                 </div>
-                
+
                 <div class="table-container">
-                <table class="users-table">
-                    <thead>
-                        <tr>
-                            <th class="col-id sortable" @click="toggleSort('id')">
-                                ID{{ getSortIndicator('id') }}
-                            </th>
-                            <th class="col-name sortable" @click="toggleSort('displayName')">
-                                Display Name{{ getSortIndicator('displayName') }}
-                            </th>
-                            <th class="col-email sortable" @click="toggleSort('email')">
-                                Email{{ getSortIndicator('email') }}
-                            </th>
-                            <th class="col-admin sortable" @click="toggleSort('admin')">
-                                Admin{{ getSortIndicator('admin') }}
-                            </th>
-                            <th class="col-deletion sortable" @click="toggleSort('deletionScheduledAt')">
-                                Deletion{{ getSortIndicator('deletionScheduledAt') }}
-                            </th>
-                            <th class="col-actions">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="user in sortedUsers" :key="user.id">
-                            <td class="col-id">{{ user.id }}</td>
-                            <td class="col-name">
-                                <div class="truncated" :title="user.displayName">
-                                    {{ user.displayName }}
-                                </div>
-                            </td>
-                            <td class="col-email">
-                                <div class="truncated" :title="user.email">
-                                    {{ user.email }}
-                                </div>
-                            </td>
-                            <td class="col-admin">
-                                <span v-if="user.admin" class="admin-badge">ADMIN</span>
-                                <span v-else class="dash">—</span>
-                            </td>
-                            <td class="col-deletion">
-                                <span v-if="user.deletionScheduledAt">
-                                    {{ formatDate(user.deletionScheduledAt) }}
-                                </span>
-                                <span v-else class="dash">—</span>
-                            </td>
-                            <td class="col-actions">
-                                <div class="action-buttons">
-                                    <Button
-                                        :variant="user.admin ? 'danger' : 'ghost'"
-                                        size="small"
-                                        @click="toggleAdmin(user)"
-                                    >
-                                        {{ user.admin ? "Demote" : "Promote" }}
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="small"
-                                        @click="triggerReset(user)"
-                                    >
-                                        Reset
-                                    </Button>
-                                    <Button
-                                        variant="danger"
-                                        size="small"
-                                        @click="openDeleteModal(user)"
-                                    >
-                                        Delete
-                                    </Button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th class="col-id sortable" @click="toggleSort('id')">
+                                    ID{{ getSortIndicator("id") }}
+                                </th>
+                                <th class="col-name sortable" @click="toggleSort('displayName')">
+                                    Display Name{{ getSortIndicator("displayName") }}
+                                </th>
+                                <th class="col-email sortable" @click="toggleSort('email')">
+                                    Email{{ getSortIndicator("email") }}
+                                </th>
+                                <th class="col-admin sortable" @click="toggleSort('admin')">
+                                    Admin{{ getSortIndicator("admin") }}
+                                </th>
+                                <th
+                                    class="col-deletion sortable"
+                                    @click="toggleSort('deletionScheduledAt')"
+                                >
+                                    Deletion{{ getSortIndicator("deletionScheduledAt") }}
+                                </th>
+                                <th class="col-actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="user in sortedUsers" :key="user.id">
+                                <td class="col-id">{{ user.id }}</td>
+                                <td class="col-name">
+                                    <div class="truncated" :title="user.displayName">
+                                        {{ user.displayName }}
+                                    </div>
+                                </td>
+                                <td class="col-email">
+                                    <div class="truncated" :title="user.email">
+                                        {{ user.email }}
+                                    </div>
+                                </td>
+                                <td class="col-admin">
+                                    <span v-if="user.admin" class="admin-badge">ADMIN</span>
+                                    <span v-else class="dash">—</span>
+                                </td>
+                                <td class="col-deletion">
+                                    <span v-if="user.deletionScheduledAt">
+                                        {{ formatDate(user.deletionScheduledAt) }}
+                                    </span>
+                                    <span v-else class="dash">—</span>
+                                </td>
+                                <td class="col-actions">
+                                    <div class="action-buttons">
+                                        <Button
+                                            v-if="!user.admin"
+                                            variant="ghost"
+                                            size="small"
+                                            @click="openEditModal(user)"
+                                        >
+                                            Edit
+                                        </Button>
+                                        <Button
+                                            :variant="user.admin ? 'danger' : 'ghost'"
+                                            size="small"
+                                            @click="toggleAdmin(user)"
+                                        >
+                                            {{ user.admin ? "Demote" : "Promote" }}
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="small"
+                                            @click="triggerReset(user)"
+                                        >
+                                            Reset
+                                        </Button>
+                                        <Button
+                                            v-if="user.deletionScheduledAt"
+                                            variant="danger"
+                                            size="small"
+                                            @click="openCancelDeletionModal(user)"
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            v-else
+                                            variant="danger"
+                                            size="small"
+                                            @click="openDeleteModal(user)"
+                                        >
+                                            Delete
+                                        </Button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
         <ModalDialog
             :open="isModalOpen"
             :title="isDemoting ? 'Confirm Demote' : 'Confirm Promotion'"
-            :description="isDemoting 
-                ? 'Are you sure you want to demote this user from admin? They will lose access to admin features immediately.' 
-                : 'Are you sure you want to promote this user to admin? They will gain access to all admin features.'"
+            :description="
+                isDemoting
+                    ? 'Are you sure you want to demote this user from admin? They will lose access to admin features immediately.'
+                    : 'Are you sure you want to promote this user to admin? They will gain access to all admin features.'
+            "
             @close="closeAdminModal"
         >
             <template #actions>
-                <Button variant="ghost" size="small" @click="closeAdminModal">
-                    Cancel
-                </Button>
-                <Button 
+                <Button variant="ghost" size="small" @click="closeAdminModal">Cancel</Button>
+                <Button
                     :variant="isDemoting ? 'danger' : 'primary'"
                     size="small"
                     @click="confirmAdminToggle"
                 >
-                    {{ isDemoting ? 'Demote' : 'Promote' }}
+                    {{ isDemoting ? "Demote" : "Promote" }}
                 </Button>
             </template>
         </ModalDialog>
@@ -391,11 +490,50 @@ onMounted(() => {
             @close="closeDeleteModal"
         >
             <template #actions>
-                <Button variant="ghost" size="small" @click="closeDeleteModal">
-                    Cancel
-                </Button>
-                <Button variant="danger" size="small" @click="confirmDelete">
-                    Delete
+                <Button variant="ghost" size="small" @click="closeDeleteModal">Cancel</Button>
+                <Button variant="danger" size="small" @click="confirmDelete">Delete</Button>
+            </template>
+        </ModalDialog>
+
+        <ModalDialog
+            :open="isCancelDeletionModalOpen"
+            title="Cancel Deletion"
+            :description="`Are you sure you want to cancel the deletion for ${userToCancelDeletion?.displayName}? Their account will no longer be scheduled for deletion.`"
+            @close="closeCancelDeletionModal"
+        >
+            <template #actions>
+                <Button variant="ghost" size="small" @click="closeCancelDeletionModal"
+                    >Cancel</Button
+                >
+                <Button variant="primary" size="small" @click="confirmCancelDeletion"
+                    >Confirm</Button
+                >
+            </template>
+        </ModalDialog>
+
+        <ModalDialog
+            :open="isEditModalOpen"
+            title="Edit User"
+            :description="`Editing ${userToEdit?.displayName}`"
+            @close="closeEditModal"
+        >
+            <div class="edit-form">
+                <Input
+                    v-model="editDisplayName"
+                    label="Display Name"
+                    placeholder="Enter display name"
+                />
+                <Input v-model="editEmail" label="Email" type="email" placeholder="Enter email" />
+            </div>
+            <template #actions>
+                <Button variant="ghost" size="small" @click="closeEditModal">Cancel</Button>
+                <Button
+                    variant="primary"
+                    size="small"
+                    :disabled="isSavingEdit"
+                    @click="confirmEdit"
+                >
+                    {{ isSavingEdit ? "Saving..." : "Save" }}
                 </Button>
             </template>
         </ModalDialog>
@@ -593,5 +731,12 @@ onMounted(() => {
     .col-id {
         display: none;
     }
+}
+
+.edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 16px;
 }
 </style>

@@ -24,6 +24,9 @@ const onBackdropClick = () => {
                 <h2>{{ title }}</h2>
             </header>
             <p v-if="description" class="modal-description">{{ description }}</p>
+            <div v-if="$slots.default" class="modal-content">
+                <slot></slot>
+            </div>
             <div class="modal-actions">
                 <slot name="actions"></slot>
             </div>
@@ -66,6 +69,10 @@ const onBackdropClick = () => {
     color: var(--muted);
     font-size: 14px;
     line-height: 1.5;
+}
+
+.modal-content {
+    margin: 16px 0;
 }
 
 .modal-actions {
