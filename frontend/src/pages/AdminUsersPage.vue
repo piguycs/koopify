@@ -522,8 +522,15 @@ onMounted(() => {
                     v-model="editDisplayName"
                     label="Display Name"
                     placeholder="Enter display name"
+                    @keydown.enter="confirmEdit"
                 />
-                <Input v-model="editEmail" label="Email" type="email" placeholder="Enter email" />
+                <Input
+                    v-model="editEmail"
+                    label="Email"
+                    type="email"
+                    placeholder="Enter email"
+                    @keydown.enter="confirmEdit"
+                />
             </div>
             <template #actions>
                 <Button variant="ghost" size="small" @click="closeEditModal">Cancel</Button>
