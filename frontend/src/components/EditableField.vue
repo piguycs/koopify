@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from "vue"
+import Button from "@/components/Button.vue"
 
 interface Props {
   label: string
@@ -62,17 +63,17 @@ const save = () => {
                 @keydown.esc="cancelEdit"
             />
             <div v-if="!editing" class="detail-actions">
-                <button class="link" type="button" @click="startEdit">
+                <Button variant="link" size="small" type="button" @click="startEdit">
                     Edit
-                </button>
+                </Button>
             </div>
             <div v-else class="detail-actions">
-                <button class="ghost" type="button" @click="save">
+                <Button variant="ghost" size="small" type="button" @click="save">
                     Save
-                </button>
-                <button class="ghost" type="button" @click="cancelEdit">
+                </Button>
+                <Button variant="ghost" size="small" type="button" @click="cancelEdit">
                     Cancel
-                </button>
+                </Button>
             </div>
         </div>
     </div>
@@ -120,27 +121,5 @@ const save = () => {
     width: 100%;
 }
 
-.ghost {
-    border: 1px solid var(--border-strong);
-    background: transparent;
-    color: var(--text);
-    padding: 8px 12px;
-    font-family: inherit;
-    font-weight: 600;
-    cursor: pointer;
-}
-.link {
-    background: transparent;
-    border: none;
-    color: var(--muted);
-    padding: 0;
-    font-family: inherit;
-    font-weight: 600;
-    cursor: pointer;
-}
 
-.link:hover {
-    color: var(--text);
-    text-decoration: underline;
-}
 </style>

@@ -5,6 +5,8 @@ import { ref, computed, onMounted } from "vue"
 import { useAuthStore } from "@/stores/auth"
 import AppLayout from "@/layouts/AppLayout.vue"
 import ModalDialog from "@/components/ModalDialog.vue"
+import Button from "@/components/Button.vue"
+import Input from "@/components/Input.vue"
 import { ApiError } from "@/api/client"
 import type { UserResponse } from "@/stores/auth"
 
@@ -258,24 +260,24 @@ onMounted(() => {
             <div v-if="successMessage" class="toast success">{{ successMessage }}</div>
             <div v-if="errorMessage" class="toast error">{{ errorMessage }}</div>
 
-            <div v-if="isLoading" class="loading">Loading users...</div>
+            <div v-if="isLoading" class="loading">Loading users</div>
             
             <div v-else class="table-wrapper">
                 <div class="table-controls">
                     <div class="search-box">
-                        <input
+                        <Input
                             v-model="searchQuery"
-                            type="text"
-                            placeholder="Search by name or email..."
-                            class="search-input"
+                            type="search"
+                            placeholder="Search by name or email"
+                            min-width="240px"
                         />
-                        <button 
-                            v-if="searchQuery" 
-                            class="clear-btn"
+                        <Button
+                            v-if="searchQuery"
+                            variant="ghost"
                             @click="clearSearch"
                         >
                             Clear
-                        </button>
+                        </Button>
                     </div>
                     <div class="results-count">
                         {{ sortedUsers.length }} user{{ sortedUsers.length === 1 ? '' : 's' }}
@@ -330,25 +332,27 @@ onMounted(() => {
                             </td>
                             <td class="col-actions">
                                 <div class="action-buttons">
-                                    <button 
-                                        class="action-btn"
-                                        :class="{ danger: user.admin }"
+                                    <Button
+                                        :variant="user.admin ? 'danger' : 'ghost'"
+                                        size="small"
                                         @click="toggleAdmin(user)"
                                     >
                                         {{ user.admin ? "Demote" : "Promote" }}
-                                    </button>
-                                    <button 
-                                        class="action-btn"
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="small"
                                         @click="triggerReset(user)"
                                     >
                                         Reset
-                                    </button>
-                                    <button 
-                                        class="action-btn danger"
+                                    </Button>
+                                    <Button
+                                        variant="danger"
+                                        size="small"
                                         @click="openDeleteModal(user)"
                                     >
                                         Delete
-                                    </button>
+                                    </Button>
                                 </div>
                             </td>
                         </tr>
@@ -367,16 +371,16 @@ onMounted(() => {
             @close="closeAdminModal"
         >
             <template #actions>
-                <button class="action-btn ghost" @click="closeAdminModal">
+                <Button variant="ghost" size="small" @click="closeAdminModal">
                     Cancel
-                </button>
-                <button 
-                    class="action-btn" 
-                    :class="isDemoting ? 'danger' : 'primary'"
+                </Button>
+                <Button 
+                    :variant="isDemoting ? 'danger' : 'primary'"
+                    size="small"
                     @click="confirmAdminToggle"
                 >
                     {{ isDemoting ? 'Demote' : 'Promote' }}
-                </button>
+                </Button>
             </template>
         </ModalDialog>
 
@@ -387,12 +391,12 @@ onMounted(() => {
             @close="closeDeleteModal"
         >
             <template #actions>
-                <button class="action-btn ghost" @click="closeDeleteModal">
+                <Button variant="ghost" size="small" @click="closeDeleteModal">
                     Cancel
-                </button>
-                <button class="action-btn danger" @click="confirmDelete">
+                </Button>
+                <Button variant="danger" size="small" @click="confirmDelete">
                     Delete
-                </button>
+                </Button>
             </template>
         </ModalDialog>
     </AppLayout>
@@ -450,41 +454,6 @@ onMounted(() => {
     display: flex;
     align-items: center;
     gap: 8px;
-}
-
-.search-input {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    padding: 8px 12px;
-    font-family: inherit;
-    font-size: 14px;
-    color: var(--text);
-    min-width: 240px;
-}
-
-.search-input::placeholder {
-    color: var(--muted);
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: rgba(245, 140, 70, 0.6);
-}
-
-.clear-btn {
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--muted);
-    padding: 8px 12px;
-    font-family: inherit;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.clear-btn:hover {
-    border-color: var(--border-strong);
-    color: var(--text);
 }
 
 .results-count {
@@ -616,54 +585,6 @@ onMounted(() => {
 .action-buttons {
     display: flex;
     gap: 8px;
-}
-
-.action-btn {
-    border: 1px solid var(--border-strong);
-    background: transparent;
-    color: var(--text);
-    padding: 6px 10px;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-    min-width: 70px;
-    text-align: center;
-}
-
-.action-btn:hover {
-    background: rgba(245, 140, 70, 0.1);
-}
-
-.action-btn.danger {
-    border-color: rgba(243, 139, 139, 0.6);
-    color: #f38b8b;
-}
-
-.action-btn.danger:hover {
-    background: rgba(243, 139, 139, 0.1);
-}
-
-.action-btn.ghost {
-    border-color: var(--border);
-    color: var(--muted);
-}
-
-.action-btn.ghost:hover {
-    border-color: var(--border-strong);
-    color: var(--text);
-    background: transparent;
-}
-
-.action-btn.primary {
-    border-color: rgba(139, 243, 139, 0.6);
-    color: #8bf38b;
-}
-
-.action-btn.primary:hover {
-    background: rgba(139, 243, 139, 0.1);
 }
 
 /* Responsive */

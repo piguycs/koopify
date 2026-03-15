@@ -3,6 +3,7 @@ import { onMounted } from "vue"
 import { RouterLink, useRouter } from "vue-router"
 import { useAppStore } from "@/stores/app"
 import { useAuthStore } from "@/stores/auth"
+import Button from "@/components/Button.vue"
 
 const appStore = useAppStore()
 const authStore = useAuthStore()
@@ -40,13 +41,22 @@ onMounted(async () => {
                     <div class="account-menu">
                         <RouterLink class="ghost" to="/account">View Account</RouterLink>
                         <div class="account-dropdown">
-                            <button class="ghost" type="button" @click="handleSignOut">
+                            <Button
+                                variant="ghost"
+                                type="button"
+                                @click="handleSignOut"
+                            >
                                 Sign out
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </template>
-                <button class="primary" type="button">Cart ({{ appStore.cartCount }})</button>
+                <Button
+                    variant="primary"
+                    type="button"
+                >
+                    Cart ({{ appStore.cartCount }})
+                </Button>
             </div>
         </header>
 

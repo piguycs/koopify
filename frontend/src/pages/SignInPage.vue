@@ -2,8 +2,11 @@
 import { ref } from "vue"
 import { RouterLink, useRoute, useRouter } from "vue-router"
 import AppLayout from "@/layouts/AppLayout.vue"
+import Button from "@/components/Button.vue"
 import { ApiError } from "@/api/client"
 import { useAuthStore } from "@/stores/auth"
+import ActionCard from "@/components/ActionCard.vue"
+import AccountCard from "@/components/AccountCard.vue"
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -59,9 +62,14 @@ const handleSubmit = async () => {
                         <input v-model="password" type="password" autocomplete="current-password" required />
                     </label>
                     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-                    <button class="primary" type="submit" :disabled="isSubmitting">
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        :loading="isSubmitting"
+                        :disabled="isSubmitting"
+                    >
                         {{ isSubmitting ? "Signing in" : "Sign in" }}
-                    </button>
+                    </Button>
                 </form>
 
                 <p class="hint">
@@ -133,28 +141,6 @@ const handleSubmit = async () => {
     margin: 0;
     font-size: 13px;
     color: #f38b8b;
-}
-
-.primary {
-    border: 1px solid transparent;
-    border-radius: 0;
-    padding: 12px 16px;
-    font-family: inherit;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-    background: #2a1c16;
-    color: var(--text);
-    border-color: rgba(245, 140, 70, 0.6);
-}
-
-.primary:disabled {
-    opacity: 0.6;
-    cursor: default;
-}
-
-.primary:hover:not(:disabled) {
-    transform: translateY(-1px);
 }
 
 .hint {

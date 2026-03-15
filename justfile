@@ -1,3 +1,8 @@
+[group("frontend")]
+[working-directory: "frontend"]
+run-frontend:
+    bun run dev
+
 # Generate Go code from schemas
 [group("backend")]
 [working-directory: "backend"]

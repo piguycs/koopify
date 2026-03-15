@@ -2,6 +2,7 @@
 import { onMounted, ref } from "vue"
 import { RouterLink, useRouter } from "vue-router"
 import AppLayout from "@/layouts/AppLayout.vue"
+import Button from "@/components/Button.vue"
 import { ApiError, apiClient } from "@/api/client"
 import { useAuthStore } from "@/stores/auth"
 
@@ -86,9 +87,14 @@ const handleSubmit = async () => {
                     </label>
                     <p v-if="policyMessage" class="policy">{{ policyMessage }}</p>
                     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-                    <button class="primary" type="submit" :disabled="isSubmitting">
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        :loading="isSubmitting"
+                        :disabled="isSubmitting"
+                    >
                         {{ isSubmitting ? "Creating account" : "Create account" }}
-                    </button>
+                    </Button>
                 </form>
 
                 <p class="hint">
@@ -166,28 +172,6 @@ const handleSubmit = async () => {
     margin: 0;
     font-size: 12px;
     color: var(--muted);
-}
-
-.primary {
-    border: 1px solid transparent;
-    border-radius: 0;
-    padding: 12px 16px;
-    font-family: inherit;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-    background: #2a1c16;
-    color: var(--text);
-    border-color: rgba(245, 140, 70, 0.6);
-}
-
-.primary:disabled {
-    opacity: 0.6;
-    cursor: default;
-}
-
-.primary:hover:not(:disabled) {
-    transform: translateY(-1px);
 }
 
 .hint {

@@ -7,6 +7,7 @@ import AccountCard from "@/components/AccountCard.vue"
 import EditableField from "@/components/EditableField.vue"
 import ActionCard from "@/components/ActionCard.vue"
 import ModalDialog from "@/components/ModalDialog.vue"
+import Button from "@/components/Button.vue"
 import { ApiError } from "@/api/client"
 
 const authStore = useAuthStore()
@@ -211,10 +212,10 @@ const goToAdminUsers = () => {
             @close="closeDeletionModal"
         >
             <template #actions>
-                <button class="ghost" type="button" @click="closeDeletionModal">Cancel</button>
-                <button class="danger" type="button" @click="confirmDeletionRequest" :disabled="isDeleting">
+                <Button variant="ghost" type="button" @click="closeDeletionModal">Cancel</Button>
+                <Button variant="danger" type="button" @click="confirmDeletionRequest" :disabled="isDeleting">
                     Request deletion
-                </button>
+                </Button>
             </template>
         </ModalDialog>
     </AppLayout>

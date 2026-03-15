@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router"
 import AppLayout from "@/layouts/AppLayout.vue"
+import Button from "@/components/Button.vue"
 
 const featuredProducts = [
     {
@@ -57,7 +58,7 @@ const featuredProducts = [
                         <p>{{ product.note }}</p>
                         <div class="product-footer">
                             <span class="price">{{ product.price }}</span>
-                            <button class="primary small">Add</button>
+                            <Button variant="primary" size="small">Add</Button>
                         </div>
                     </div>
                 </article>
@@ -183,37 +184,6 @@ const featuredProducts = [
 
 .price {
     font-weight: 700;
-}
-
-.ghost,
-.primary {
-    border: 1px solid transparent;
-    border-radius: 0;
-    padding: 10px 16px;
-    font-family: inherit;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-}
-
-.ghost {
-    background: transparent;
-    border-color: var(--border-strong);
-    color: var(--text);
-}
-
-.primary {
-    background: #2a1c16;
-    color: var(--text);
-    border-color: rgba(245, 140, 70, 0.6);
-}
-
-.primary.small {
-    padding: 8px 14px;
-    font-size: 12px;
 }
 
 .ghost:hover,

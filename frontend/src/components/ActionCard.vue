@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import Button from "@/components/Button.vue"
+
 interface Props {
     title: string
     description: string
@@ -18,15 +20,14 @@ const emit = defineEmits<{
     <div class="action-card">
         <h2>{{ title }}</h2>
         <p>{{ description }}</p>
-        <button 
-            class="ghost" 
-            :class="{ danger }" 
+        <Button 
+            :variant="danger ? 'danger' : 'ghost'"
             type="button"
             :disabled="disabled"
             @click="emit('click')"
         >
             {{ buttonText }}
-        </button>
+        </Button>
     </div>
 </template>
 
@@ -49,23 +50,5 @@ const emit = defineEmits<{
     font-size: 13px;
 }
 
-.action-card .ghost {
-    border: 1px solid var(--border-strong);
-    background: transparent;
-    color: var(--text);
-    padding: 10px 14px;
-    font-family: inherit;
-    font-weight: 600;
-    cursor: pointer;
-}
 
-.action-card .ghost:disabled {
-    opacity: 0.6;
-    cursor: default;
-}
-
-.action-card .ghost.danger {
-    border-color: rgba(243, 139, 139, 0.6);
-    color: #f38b8b;
-}
 </style>
