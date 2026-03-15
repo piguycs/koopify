@@ -68,3 +68,33 @@ func (us *UserService) RequestDeletion(ctx context.Context, userID int64) (*User
 func (us *UserService) CancelDeletion(ctx context.Context, userID int64) (*UserResponse, error) {
 	return us.repository.CancelUserDeletion(ctx, userID)
 }
+
+func (us *UserService) CancelUserDeletionAdmin(ctx context.Context, userID int64) (*UserResponse, error) {
+	return us.repository.CancelUserDeletion(ctx, userID)
+}
+
+func (us *UserService) UpdateUserDetailsAdmin(ctx context.Context, userID int64, update UpdateUserRequest) (*UserResponse, error) {
+	// First, get the target user to check if they are an admin
+	targetUser, err := us.repository.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Cannot edit admin users
+	if targetUser.Admin {
+		return nil, ErrCannotEditAdmin
+	}
+
+	// Apply updates
+	newDisplayName := targetUser.DisplayName
+	if update.DisplayName != nil {
+		newDisplayName = *update.DisplayName
+	}
+
+	newEmail := targetUser.Email
+	if update.Email != nil {
+		newEmail = *update.Email
+	}
+
+	return us.repository.UpdateUser(ctx, userID, newDisplayName, newEmail)
+}

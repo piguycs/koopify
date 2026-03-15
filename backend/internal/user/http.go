@@ -288,3 +288,62 @@ func (uc *UserController) UpdateUserAdmin(ctx *echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, resp)
 }
+
+func (uc *UserController) CancelUserDeletionAdmin(ctx *echo.Context) error {
+	if !auth.IsAdminFromToken(ctx) {
+		return ctx.JSON(http.StatusForbidden, response.NewError("forbidden", "admin access required"))
+	}
+
+	userID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, response.NewError("invalid_request", "invalid user id"))
+	}
+
+	resp, err := uc.service.CancelUserDeletionAdmin(ctx.Request().Context(), userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrUserNotFound):
+			return ctx.JSON(http.StatusNotFound, response.NewError("user_not_found", err.Error()))
+		default:
+			return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to cancel user deletion"))
+		}
+	}
+
+	return ctx.JSON(http.StatusOK, resp)
+}
+
+func (uc *UserController) UpdateUserDetailsAdmin(ctx *echo.Context) error {
+	if !auth.IsAdminFromToken(ctx) {
+		return ctx.JSON(http.StatusForbidden, response.NewError("forbidden", "admin access required"))
+	}
+
+	userID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, response.NewError("invalid_request", "invalid user id"))
+	}
+
+	update, err := internal.BindAndValidate[UpdateUserRequest](ctx)
+	if err != nil {
+		return err
+	}
+
+	if update.DisplayName == nil && update.Email == nil {
+		return ctx.JSON(http.StatusBadRequest, response.NewError("invalid_request", "provide at least one field to update"))
+	}
+
+	resp, err := uc.service.UpdateUserDetailsAdmin(ctx.Request().Context(), userID, *update)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrUserNotFound):
+			return ctx.JSON(http.StatusNotFound, response.NewError("user_not_found", err.Error()))
+		case errors.Is(err, ErrCannotEditAdmin):
+			return ctx.JSON(http.StatusForbidden, response.NewError("cannot_edit_admin", err.Error()))
+		case errors.Is(err, ErrUserExists):
+			return ctx.JSON(http.StatusConflict, response.NewError("user_exists", err.Error()))
+		default:
+			return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to update user"))
+		}
+	}
+
+	return ctx.JSON(http.StatusOK, resp)
+}
