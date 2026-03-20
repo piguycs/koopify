@@ -28,7 +28,7 @@ onMounted(async () => {
 <template>
     <div class="page">
         <header class="nav">
-            <div class="logo">Koopify</div>
+            <RouterLink class="logo" to="/">Koopify</RouterLink>
             <nav class="nav-links">
                 <RouterLink to="/">Home</RouterLink>
                 <RouterLink to="/catalog">Catalog</RouterLink>
