@@ -10,8 +10,7 @@ services:
           -keyout /certs/privkey.pem \
           -out /certs/cert.pem \
           -subj '/CN=localhost';
-      fi
-      '
+      fi'
     volumes:
       - ./dev-certs:/certs
 
@@ -19,11 +18,30 @@ services:
     build:
       dockerfile: WEB.Dockerfile
       context: frontend
+      args:
+        # for some reason, I am unable to read this value from the .env
+        # so I will hardcode it, its not like docker-compose is used for deployment or development
+        # so I dont have an issue with having this hardcoded
+        VITE_API_BASE_URL: "http://localhost:8080"
     ports:
-      - 8000:443
+      - 5173:443
     volumes:
       - ./dev-certs:/certs:ro
     depends_on:
       build-certs:
         condition: service_completed_successfully
 
+  api:
+    build:
+      dockerfile: API.Dockerfile
+      context: backend
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      PGDB: ${PGDB}
+      ADYEN_API_KEY: ${ADYEN_API_KEY}
+      ADYEN_MERCHANT_ACCOUNT: ${ADYEN_MERCHANT_ACCOUNT}
+      ADYEN_THEME_ID: ${ADYEN_THEME_ID}
+      CHECKOUT_RETURN_URL: ${CHECKOUT_RETURN_URL}
+      
+    ports:
+      - 8080:8080
