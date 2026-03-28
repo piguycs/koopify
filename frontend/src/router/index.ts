@@ -7,7 +7,8 @@ import SignUpPage from "@/pages/SignUpPage.vue"
 import AccountPage from "@/pages/AccountPage.vue"
 import NotFoundPage from "@/pages/NotFoundPage.vue"
 import ForbiddenPage from "@/pages/ForbiddenPage.vue"
-import AdminInventoryPage from "@/pages/AdminInventoryPage.vue"
+import AdminProductsPage from "@/pages/AdminProductsPage.vue"
+import AdminProductEditPage from "@/pages/AdminProductEditPage.vue"
 import AdminUsersPage from "@/pages/AdminUsersPage.vue"
 import CheckoutComplete from "@/pages/CheckoutComplete.vue"
 
@@ -31,9 +32,21 @@ const router = createRouter({
         },
 
         {
-            path: "/admin/inventory",
-            name: "admin-inventory",
-            component: AdminInventoryPage,
+            path: "/admin/products",
+            name: "admin-products",
+            component: AdminProductsPage,
+            meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+            path: "/admin/products/new",
+            name: "admin-products-new",
+            component: AdminProductEditPage,
+            meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+            path: "/admin/products/:id",
+            name: "admin-products-edit",
+            component: AdminProductEditPage,
             meta: { requiresAuth: true, requiresAdmin: true },
         },
         {

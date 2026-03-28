@@ -110,6 +110,7 @@ func (s *ProductService) UpdateProduct(
 		InStock:         req.InStock,
 		IsActive:        req.IsActive,
 	})
+
 	if err != nil {
 		return nil, err
 	}

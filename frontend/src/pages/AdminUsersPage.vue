@@ -7,6 +7,7 @@ import AppLayout from "@/layouts/AppLayout.vue"
 import ModalDialog from "@/components/ModalDialog.vue"
 import Button from "@/components/Button.vue"
 import Input from "@/components/Input.vue"
+import Toast from "@/components/Toast.vue"
 import { ApiError } from "@/api/client"
 import type { UserResponse } from "@/stores/auth"
 
@@ -340,8 +341,8 @@ onMounted(() => {
         </section>
 
         <div class="admin-content">
-            <div v-if="successMessage" class="toast success">{{ successMessage }}</div>
-            <div v-if="errorMessage" class="toast error">{{ errorMessage }}</div>
+            <Toast v-if="successMessage" :message="successMessage" variant="success" @close="successMessage = ''" />
+            <Toast v-if="errorMessage" :message="errorMessage" variant="error" @close="errorMessage = ''" />
 
             <div v-if="isLoading" class="loading">Loading users</div>
 
@@ -604,23 +605,6 @@ onMounted(() => {
 .results-count {
     color: var(--muted);
     font-size: 14px;
-}
-
-.toast {
-    padding: 12px 16px;
-    font-size: 14px;
-}
-
-.toast.success {
-    background: rgba(139, 243, 139, 0.1);
-    border: 1px solid rgba(139, 243, 139, 0.3);
-    color: #8bf38b;
-}
-
-.toast.error {
-    background: rgba(243, 139, 139, 0.1);
-    border: 1px solid rgba(243, 139, 139, 0.3);
-    color: #f38b8b;
 }
 
 .loading {

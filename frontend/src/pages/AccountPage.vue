@@ -136,12 +136,12 @@ async function confirmDeletionRequest() {
 
 const isAdmin = computed(() => Boolean(currentUser.value?.admin))
 
-const goToAdminInventory = () => {
-    router.push("/admin/inventory")
+function goToAdminProducts() {
+    router.push({ name: "admin-products" })
 }
 
-const goToAdminUsers = () => {
-    router.push("/admin/users")
+function goToAdminUsers() {
+    router.push({ name: "admin-users" })
 }
 </script>
 
@@ -157,10 +157,10 @@ const goToAdminUsers = () => {
                     badge="ADMIN"
                 >
                     <ActionCard
-                        title="Manage Inventory"
-                        description="Add, edit, and update stock."
-                        button-text="Open inventory"
-                        @click="goToAdminInventory"
+                        title="Manage Products"
+                        description="Add, edit, and manage product listings."
+                        button-text="Open products"
+                        @click="goToAdminProducts"
                     />
                     <ActionCard
                         title="Manage Users"

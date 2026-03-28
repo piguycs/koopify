@@ -75,9 +75,9 @@ func (cv *CustomValidator) Validate(i any) error {
 	return nil
 }
 
-// Bind a value from Echo's query parameters, path parameters or json body, and
-// validate the provided values using reflection. Only return the underlying
-// data if all the data exists AND it is validated
+// Bind a value from Echo's query parameters, path parameters or json body, and validate the
+// provided values using reflection. Only return the underlying data if all the data exists AND it
+// is validated
 func BindAndValidate[T any](ctx *echo.Context) (*T, error) {
 	data := new(T)
 
