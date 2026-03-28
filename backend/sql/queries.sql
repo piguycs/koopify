@@ -65,16 +65,51 @@ select id, name, slug, description, image_url, price_eur_cents, discount_percent
 from products where id = $1 limit 1;
 
 -- name: GetProductBySlug :one
-select id, name, slug, description, image_url, price_eur_cents, discount_percent, inventory_count, in_stock, is_active, created_at, updated_at
+select 
+	id,
+	name,
+	slug,
+	description,
+	image_url,
+	price_eur_cents,
+	discount_percent,
+	inventory_count,
+	in_stock,
+	is_active,
+	created_at,
+	updated_at
 from products where slug = $1 limit 1;
 
 -- name: ListProducts :many
-select id, name, slug, description, image_url, price_eur_cents, discount_percent, inventory_count, in_stock, is_active, created_at, updated_at
+select id,
+	name,
+	slug,
+	description,
+	image_url,
+	price_eur_cents,
+	discount_percent,
+	inventory_count,
+	in_stock,
+	is_active,
+	created_at,
+	updated_at
 from products where is_active = true
 order by created_at desc;
 
 -- name: ListAllProducts :many
-select id, name, slug, description, image_url, price_eur_cents, discount_percent, inventory_count, in_stock, is_active, created_at, updated_at
+select
+	id,
+	name,
+	slug,
+	description,
+	image_url,
+	price_eur_cents,
+	discount_percent,
+	inventory_count,
+	in_stock,
+	is_active,
+	created_at,
+	updated_at
 from products order by created_at desc;
 
 -- name: UpdateProduct :one
@@ -96,7 +131,19 @@ returning id, name, slug, description, image_url, price_eur_cents, discount_perc
 delete from products where id = $1;
 
 -- name: ListProductsByCategory :many
-select p.id, p.name, p.slug, p.description, p.image_url, p.price_eur_cents, p.discount_percent, p.inventory_count, p.in_stock, p.is_active, p.created_at, p.updated_at
+select
+	p.id,
+	p.name,
+	p.slug,
+	p.description,
+	p.image_url,
+	p.price_eur_cents,
+	p.discount_percent,
+	p.inventory_count,
+	p.in_stock,
+	p.is_active,
+	p.created_at,
+	p.updated_at
 from products p
 join product_categories pc on p.id = pc.product_id
 where pc.category_id = $1 and p.is_active = true
