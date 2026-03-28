@@ -31,7 +31,7 @@ onMounted(async () => {
             <RouterLink class="logo" to="/">Koopify</RouterLink>
             <nav class="nav-links">
                 <RouterLink to="/">Home</RouterLink>
-                <RouterLink to="/catalog">Catalog</RouterLink>
+                <RouterLink to="/catalogue">Catalogue</RouterLink>
             </nav>
             <div class="nav-actions">
                 <template v-if="!authStore.isAuthenticated">

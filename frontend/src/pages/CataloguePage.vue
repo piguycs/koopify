@@ -5,7 +5,7 @@ import AppLayout from "@/layouts/AppLayout.vue"
 <template>
     <AppLayout>
         <section class="page-section">
-            <h1>Catalog</h1>
+            <h1>Catalogue</h1>
             <p>Browse packs, singles, and curated drops.</p>
         </section>
     </AppLayout>

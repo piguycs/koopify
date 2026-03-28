@@ -39,7 +39,7 @@ const featuredProducts = [
                 <h1>Do IRL trading in this store</h1>
                 <p class="lead">A fictional store to sell fictional videogame items.</p>
                 <div class="hero-actions">
-                    <RouterLink class="primary" to="/catalog">Shop now</RouterLink>
+                    <RouterLink class="primary" to="/catalogue">Shop now</RouterLink>
                 </div>
             </div>
         </section>

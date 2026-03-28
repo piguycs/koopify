@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router"
 import { useAuthStore } from "@/stores/auth"
 import HomePage from "@/pages/HomePage.vue"
-import CatalogPage from "@/pages/CatalogPage.vue"
+import CataloguePage from "@/pages/CataloguePage.vue"
 import SignInPage from "@/pages/SignInPage.vue"
 import SignUpPage from "@/pages/SignUpPage.vue"
 import AccountPage from "@/pages/AccountPage.vue"
@@ -16,7 +16,7 @@ const router = createRouter({
     history: createWebHistory(),
     routes: [
         { path: "/", name: "home", component: HomePage },
-        { path: "/catalog", name: "catalog", component: CatalogPage },
+        { path: "/catalogue", name: "catalogue", component: CataloguePage },
 
         { path: "/sign-in", name: "sign-in", component: SignInPage },
         { path: "/sign-up", name: "sign-up", component: SignUpPage },

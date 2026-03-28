@@ -50,7 +50,7 @@ const handleSubmit = async () => {
 
     try {
         await authStore.signUp(displayName.value, email.value, password.value)
-        await router.push("/catalog")
+        await router.push("/catalogue")
     } catch (err) {
         if (err instanceof ApiError) {
             errorMessage.value = err.message

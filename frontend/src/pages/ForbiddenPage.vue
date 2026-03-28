@@ -9,7 +9,7 @@ const route = useRoute()
 // unauthorised pages should result in a 404
 const redirectTarget = computed(() => {
     const redirect = route.query.redirect
-    return typeof redirect === "string" && redirect.length > 0 ? redirect : "/catalog"
+    return typeof redirect === "string" && redirect.length > 0 ? redirect : "/catalogue"
 })
 </script>
 
