@@ -20,21 +20,6 @@ body {
     font-family: "Space Grotesk", sans-serif;
     color: var(--text);
     background-color: var(--bg);
-    background-image:
-        repeating-linear-gradient(
-            0deg,
-            rgba(255, 255, 255, 0.035),
-            rgba(255, 255, 255, 0.035) 1px,
-            transparent 1px,
-            transparent 22px
-        ),
-        repeating-linear-gradient(
-            90deg,
-            rgba(255, 255, 255, 0.035),
-            rgba(255, 255, 255, 0.035) 1px,
-            transparent 1px,
-            transparent 22px
-        );
 }
 
 a {
