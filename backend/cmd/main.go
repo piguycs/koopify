@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 
+	"github.com/charmbracelet/log"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
 	"piguy.nl/koopify/internal"
+	"piguy.nl/koopify/internal/checkout"
 	"piguy.nl/koopify/internal/db"
 	"piguy.nl/koopify/internal/router"
 	"piguy.nl/koopify/internal/user"
@@ -43,11 +44,18 @@ func main() {
 	userService := user.NewUserService(&userRepo)
 	userController := user.NewUserController(config.JwtSecret, userService)
 
-	router.RegisterPublicRoutes(e, &userController)
+	checkoutController := checkout.NewCheckoutController(
+		config.AdyenApiKey,
+		config.AdyenMerchantAccount,
+		config.AdyenThemeId,
+		config.CheckoutReturnUrl,
+	)
+
+	router.RegisterPublicRoutes(e, &userController, &checkoutController)
 	router.RegisterPrivateRoutes(e, config.JwtSecret, &userController)
 
 	for _, route := range e.Router().Routes() {
-		log.Printf("Route: %s %s\n", route.Method, route.Path)
+		log.Info("Backend API route registered", "method", route.Method, "path", route.Path)
 	}
 
 	internal.StartServer(ctx, config.HostAddr, config.TlsConfig, e)

@@ -9,6 +9,7 @@ import NotFoundPage from "@/pages/NotFoundPage.vue"
 import ForbiddenPage from "@/pages/ForbiddenPage.vue"
 import AdminInventoryPage from "@/pages/AdminInventoryPage.vue"
 import AdminUsersPage from "@/pages/AdminUsersPage.vue"
+import CheckoutComplete from "@/pages/CheckoutComplete.vue"
 
 const router = createRouter({
     history: createWebHistory(),
@@ -21,6 +22,13 @@ const router = createRouter({
 
         // authenticated route
         { path: "/account", name: "account", component: AccountPage, meta: { requiresAuth: true } },
+
+        {
+            path: "/checkout-complete",
+            name: "checkout-complete",
+            component: CheckoutComplete,
+            meta: { requiresAuth: true }
+        },
 
         {
             path: "/admin/inventory",

@@ -38,6 +38,14 @@ func GetEnvDefault(key, defaultValue string) string {
 	return defaultValue
 }
 
+func GetEnv(key string) *string {
+	if value := os.Getenv(key); value != "" {
+		return &value
+	}
+	return nil
+
+}
+
 func StartServer(ctx context.Context, address string, tlsConfig *tls.Config, echoHandler *echo.Echo) {
 	sc := echo.StartConfig{Address: address}
 	if tlsConfig != nil {

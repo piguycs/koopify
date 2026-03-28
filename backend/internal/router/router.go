@@ -5,14 +5,21 @@ import (
 	echojwt "github.com/labstack/echo-jwt/v5"
 	"github.com/labstack/echo/v5"
 	"piguy.nl/koopify/internal/auth"
+	"piguy.nl/koopify/internal/checkout"
 	"piguy.nl/koopify/internal/user"
 )
 
-func RegisterPublicRoutes(e *echo.Echo, userController *user.UserController) {
+func RegisterPublicRoutes(
+	e *echo.Echo,
+	userController *user.UserController,
+	checkoutController *checkout.CheckoutController,
+) {
 	public := e.Group("/public_api/v1")
 	public.POST("/login", userController.LoginUser)
 	public.POST("/sign_up", userController.CreateUser)
 	public.GET("/password_policy", userController.GetPasswordPolicy)
+
+	// public.GET("/adyen_test", checkoutController.TestCheckout)
 }
 
 func RegisterPrivateRoutes(e *echo.Echo, jwtSecret string, userController *user.UserController) {
