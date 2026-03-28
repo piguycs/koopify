@@ -9,18 +9,25 @@ import (
 	"piguy.nl/koopify/internal/db"
 )
 
-// ProductRepository defines all persistence operations for products and categories.
+// ProductRepository maps one-to-one with SQL queries. No composition or
+// business logic lives here; the service layer owns that.
 type ProductRepository interface {
-	ListAllProducts(ctx context.Context) ([]ProductResponse, error)
-	GetProduct(ctx context.Context, id int64) (*ProductResponse, error)
-	CreateProduct(ctx context.Context, req CreateProductRequest) (*ProductResponse, error)
-	UpdateProduct(ctx context.Context, id int64, req UpdateProductRequest) (*ProductResponse, error)
+	ListProducts(ctx context.Context) ([]db.Product, error)
+	ListAllProducts(ctx context.Context) ([]db.Product, error)
+	ListProductsByCategory(ctx context.Context, categoryID int64) ([]db.Product, error)
+	GetProduct(ctx context.Context, id int64) (*db.Product, error)
+	GetProductBySlug(ctx context.Context, slug string) (*db.Product, error)
+	CreateProduct(ctx context.Context, params db.CreateProductParams) (*db.Product, error)
+	UpdateProduct(ctx context.Context, params db.UpdateProductParams) (*db.Product, error)
 	DeleteProduct(ctx context.Context, id int64) error
 
-	ListCategories(ctx context.Context) ([]CategoryResponse, error)
-	CreateCategory(ctx context.Context, req CreateCategoryRequest) (*CategoryResponse, error)
+	GetProductCategories(ctx context.Context, productID int64) ([]db.Category, error)
+	AttachProductCategory(ctx context.Context, params db.AttachProductCategoryParams) error
+	DetachProductCategory(ctx context.Context, params db.DetachProductCategoryParams) error
 
-	SetProductCategories(ctx context.Context, productID int64, categoryIDs []int64) error
+	ListCategories(ctx context.Context) ([]db.Category, error)
+	GetCategoryBySlug(ctx context.Context, slug string) (*db.Category, error)
+	CreateCategory(ctx context.Context, params db.CreateCategoryParams) (*db.Category, error)
 }
 
 // PGProductRepository is the PostgreSQL implementation of ProductRepository.
@@ -32,24 +39,22 @@ func NewProductRepository(queries *db.Queries) PGProductRepository {
 	return PGProductRepository{queries: queries}
 }
 
-func (r PGProductRepository) ListAllProducts(ctx context.Context) ([]ProductResponse, error) {
-	products, err := r.queries.ListAllProducts(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]ProductResponse, len(products))
-	for i, p := range products {
-		cats, err := r.queries.GetProductCategories(ctx, p.ID)
-		if err != nil {
-			return nil, err
-		}
-		result[i] = productResponseFrom(p, cats)
-	}
-	return result, nil
+func (r PGProductRepository) ListProducts(ctx context.Context) ([]db.Product, error) {
+	return r.queries.ListProducts(ctx)
 }
 
-func (r PGProductRepository) GetProduct(ctx context.Context, id int64) (*ProductResponse, error) {
+func (r PGProductRepository) ListAllProducts(ctx context.Context) ([]db.Product, error) {
+	return r.queries.ListAllProducts(ctx)
+}
+
+func (r PGProductRepository) ListProductsByCategory(
+	ctx context.Context,
+	categoryID int64,
+) ([]db.Product, error) {
+	return r.queries.ListProductsByCategory(ctx, categoryID)
+}
+
+func (r PGProductRepository) GetProduct(ctx context.Context, id int64) (*db.Product, error) {
 	p, err := r.queries.GetProduct(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -57,31 +62,25 @@ func (r PGProductRepository) GetProduct(ctx context.Context, id int64) (*Product
 		}
 		return nil, err
 	}
+	return &p, nil
+}
 
-	cats, err := r.queries.GetProductCategories(ctx, p.ID)
+func (r PGProductRepository) GetProductBySlug(ctx context.Context, slug string) (*db.Product, error) {
+	p, err := r.queries.GetProductBySlug(ctx, slug)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrProductNotFound
+		}
 		return nil, err
 	}
-
-	resp := productResponseFrom(p, cats)
-	return &resp, nil
+	return &p, nil
 }
 
 func (r PGProductRepository) CreateProduct(
 	ctx context.Context,
-	req CreateProductRequest,
-) (*ProductResponse, error) {
-	p, err := r.queries.CreateProduct(ctx, db.CreateProductParams{
-		Name:            req.Name,
-		Slug:            req.Slug,
-		Description:     req.Description,
-		ImageUrl:        optionalText(req.ImageUrl),
-		PriceEurCents:   req.PriceEurCents,
-		DiscountPercent: optionalInt4(req.DiscountPercent),
-		InventoryCount:  req.InventoryCount,
-		InStock:         req.InStock,
-		IsActive:        req.IsActive,
-	})
+	params db.CreateProductParams,
+) (*db.Product, error) {
+	p, err := r.queries.CreateProduct(ctx, params)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation {
@@ -89,37 +88,14 @@ func (r PGProductRepository) CreateProduct(
 		}
 		return nil, err
 	}
-
-	if err = r.SetProductCategories(ctx, p.ID, req.CategoryIDs); err != nil {
-		return nil, err
-	}
-
-	cats, err := r.queries.GetProductCategories(ctx, p.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := productResponseFrom(p, cats)
-	return &resp, nil
+	return &p, nil
 }
 
 func (r PGProductRepository) UpdateProduct(
 	ctx context.Context,
-	id int64,
-	req UpdateProductRequest,
-) (*ProductResponse, error) {
-	p, err := r.queries.UpdateProduct(ctx, db.UpdateProductParams{
-		ID:              id,
-		Name:            req.Name,
-		Slug:            req.Slug,
-		Description:     req.Description,
-		ImageUrl:        optionalText(req.ImageUrl),
-		PriceEurCents:   req.PriceEurCents,
-		DiscountPercent: optionalInt4(req.DiscountPercent),
-		InventoryCount:  req.InventoryCount,
-		InStock:         req.InStock,
-		IsActive:        req.IsActive,
-	})
+	params db.UpdateProductParams,
+) (*db.Product, error) {
+	p, err := r.queries.UpdateProduct(ctx, params)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation {
@@ -130,52 +106,54 @@ func (r PGProductRepository) UpdateProduct(
 		}
 		return nil, err
 	}
-
-	if err = r.SetProductCategories(ctx, p.ID, req.CategoryIDs); err != nil {
-		return nil, err
-	}
-
-	cats, err := r.queries.GetProductCategories(ctx, p.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	resp := productResponseFrom(p, cats)
-	return &resp, nil
+	return &p, nil
 }
 
 func (r PGProductRepository) DeleteProduct(ctx context.Context, id int64) error {
-	// Verify the product exists first.
-	_, err := r.queries.GetProduct(ctx, id)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return ErrProductNotFound
-		}
-		return err
-	}
 	return r.queries.DeleteProduct(ctx, id)
 }
 
-func (r PGProductRepository) ListCategories(ctx context.Context) ([]CategoryResponse, error) {
-	cats, err := r.queries.ListCategories(ctx)
+func (r PGProductRepository) GetProductCategories(
+	ctx context.Context,
+	productID int64,
+) ([]db.Category, error) {
+	return r.queries.GetProductCategories(ctx, productID)
+}
+
+func (r PGProductRepository) AttachProductCategory(
+	ctx context.Context,
+	params db.AttachProductCategoryParams,
+) error {
+	return r.queries.AttachProductCategory(ctx, params)
+}
+
+func (r PGProductRepository) DetachProductCategory(
+	ctx context.Context,
+	params db.DetachProductCategoryParams,
+) error {
+	return r.queries.DetachProductCategory(ctx, params)
+}
+
+func (r PGProductRepository) ListCategories(ctx context.Context) ([]db.Category, error) {
+	return r.queries.ListCategories(ctx)
+}
+
+func (r PGProductRepository) GetCategoryBySlug(ctx context.Context, slug string) (*db.Category, error) {
+	c, err := r.queries.GetCategoryBySlug(ctx, slug)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrCategoryNotFound
+		}
 		return nil, err
 	}
-	result := make([]CategoryResponse, len(cats))
-	for i, c := range cats {
-		result[i] = categoryResponseFrom(c)
-	}
-	return result, nil
+	return &c, nil
 }
 
 func (r PGProductRepository) CreateCategory(
 	ctx context.Context,
-	req CreateCategoryRequest,
-) (*CategoryResponse, error) {
-	c, err := r.queries.CreateCategory(ctx, db.CreateCategoryParams{
-		Name: req.Name,
-		Slug: req.Slug,
-	})
+	params db.CreateCategoryParams,
+) (*db.Category, error) {
+	c, err := r.queries.CreateCategory(ctx, params)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation {
@@ -183,55 +161,5 @@ func (r PGProductRepository) CreateCategory(
 		}
 		return nil, err
 	}
-	resp := categoryResponseFrom(c)
-	return &resp, nil
-}
-
-// SetProductCategories replaces the full set of categories for a product.
-// It detaches all existing links and re-attaches the provided IDs.
-func (r PGProductRepository) SetProductCategories(
-	ctx context.Context,
-	productID int64,
-	categoryIDs []int64,
-) error {
-	existing, err := r.queries.GetProductCategories(ctx, productID)
-	if err != nil {
-		return err
-	}
-
-	existingSet := make(map[int64]struct{}, len(existing))
-	for _, c := range existing {
-		existingSet[c.ID] = struct{}{}
-	}
-
-	desiredSet := make(map[int64]struct{}, len(categoryIDs))
-	for _, id := range categoryIDs {
-		desiredSet[id] = struct{}{}
-	}
-
-	// Detach categories that are no longer desired.
-	for _, c := range existing {
-		if _, keep := desiredSet[c.ID]; !keep {
-			if err = r.queries.DetachProductCategory(ctx, db.DetachProductCategoryParams{
-				ProductID:  productID,
-				CategoryID: c.ID,
-			}); err != nil {
-				return err
-			}
-		}
-	}
-
-	// Attach new categories.
-	for _, id := range categoryIDs {
-		if _, already := existingSet[id]; !already {
-			if err = r.queries.AttachProductCategory(ctx, db.AttachProductCategoryParams{
-				ProductID:  productID,
-				CategoryID: id,
-			}); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
+	return &c, nil
 }

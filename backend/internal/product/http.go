@@ -12,7 +12,6 @@ import (
 	"piguy.nl/koopify/internal/response"
 )
 
-// ProductController handles HTTP requests for the product and category domain.
 type ProductController struct {
 	service ProductService
 }
@@ -21,18 +20,68 @@ func NewProductController(service ProductService) ProductController {
 	return ProductController{service: service}
 }
 
-// Return all the products, no auth required
-func (pc *ProductController) ListAllProducts(ctx *echo.Context) error {
-	products, err := pc.service.ListAllProducts(ctx.Request().Context())
+// ListProducts is a public handler. If a ?category=<slug> query param is provided it returns only
+// active products in that category (404 if the category slug is unknown). Without the param it
+// returns all active products.
+func (pc *ProductController) ListProducts(ctx *echo.Context) error {
+	categorySlug := ctx.QueryParam("category")
+
+	if categorySlug != "" {
+		products, err := pc.service.ListActiveProductsByCategorySlug(ctx.Request().Context(), categorySlug)
+		if err != nil {
+			switch {
+			case errors.Is(err, ErrCategoryNotFound):
+				return ctx.JSON(http.StatusNotFound, response.NewError("category_not_found", err.Error()))
+			default:
+				log.Errorf("Error listing products by category %q: %s", categorySlug, err.Error())
+				return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to list products"))
+			}
+		}
+		return ctx.JSON(http.StatusOK, products)
+	}
+
+	products, err := pc.service.ListActiveProducts(ctx.Request().Context())
 	if err != nil {
 		log.Errorf("Error listing products: %s", err.Error())
 		return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to list products"))
 	}
-
 	return ctx.JSON(http.StatusOK, products)
 }
 
-// Get a singular product back
+// Returns a product by its slug, including inactive ones. So bookmarks etc dont appear as dead
+// links to customers
+func (pc *ProductController) GetProductBySlug(ctx *echo.Context) error {
+	slug := ctx.Param("slug")
+
+	product, err := pc.service.GetProductBySlug(ctx.Request().Context(), slug)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrProductNotFound):
+			return ctx.JSON(http.StatusNotFound, response.NewError("product_not_found", err.Error()))
+		default:
+			log.Errorf("Error fetching product by slug %q: %s", slug, err.Error())
+			return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to fetch product"))
+		}
+	}
+	return ctx.JSON(http.StatusOK, product)
+}
+
+// ListAllProducts is an admin handler that returns all products even if it is inactive. If someone
+// has a direct link to this, maybe via a bookmark, they should not be left wondering what it was for
+func (pc *ProductController) ListAllProducts(ctx *echo.Context) error {
+	if !auth.IsAdminFromToken(ctx) {
+		return ctx.JSON(http.StatusForbidden, response.NewError("forbidden", "admin access required"))
+	}
+
+	products, err := pc.service.ListAllProducts(ctx.Request().Context())
+	if err != nil {
+		log.Errorf("Error listing all products: %s", err.Error())
+		return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to list products"))
+	}
+	return ctx.JSON(http.StatusOK, products)
+}
+
+// GetProduct is an admin handler that returns a single product by numeric ID.
 func (pc *ProductController) GetProduct(ctx *echo.Context) error {
 	if !auth.IsAdminFromToken(ctx) {
 		return ctx.JSON(http.StatusForbidden, response.NewError("forbidden", "admin access required"))
@@ -53,7 +102,6 @@ func (pc *ProductController) GetProduct(ctx *echo.Context) error {
 			return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to fetch product"))
 		}
 	}
-
 	return ctx.JSON(http.StatusOK, product)
 }
 
@@ -139,12 +187,8 @@ func (pc *ProductController) DeleteProduct(ctx *echo.Context) error {
 	return ctx.JSON(http.StatusNoContent, nil)
 }
 
-// ListCategories returns all categories.
+// ListCategories is a public handler that returns all categories.
 func (pc *ProductController) ListCategories(ctx *echo.Context) error {
-	if !auth.IsAdminFromToken(ctx) {
-		return ctx.JSON(http.StatusForbidden, response.NewError("forbidden", "admin access required"))
-	}
-
 	cats, err := pc.service.ListCategories(ctx.Request().Context())
 	if err != nil {
 		log.Errorf("Error listing categories: %s", err.Error())

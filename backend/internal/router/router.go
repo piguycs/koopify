@@ -21,8 +21,8 @@ func RegisterPublicRoutes(
 	public.POST("/sign_up", userController.CreateUser)
 	public.GET("/password_policy", userController.GetPasswordPolicy)
 
-	public.GET("/products", productController.ListAllProducts)
-	public.GET("/products/:id", productController.GetProduct)
+	public.GET("/products", productController.ListProducts)
+	public.GET("/products/:slug", productController.GetProductBySlug)
 	public.GET("/categories", productController.ListCategories)
 
 	// public.GET("/adyen_test", checkoutController.TestCheckout)
@@ -55,8 +55,10 @@ func RegisterPrivateRoutes(
 	private.DELETE("/users/:id/deletion", userController.CancelUserDeletionAdmin)
 	private.PATCH("/users/:id", userController.UpdateUserDetailsAdmin)
 
-	// only admin users can access these, the GET endpoint for /products and /products/:id is in the
-	// public router function
+	// Admin product routes (auth enforced per-handler)
+	// Note: public GET /products and GET /products/:slug live in the public router
+	private.GET("/products", productController.ListAllProducts)
+	private.GET("/products/:id", productController.GetProduct)
 	private.POST("/products", productController.CreateProduct)
 	private.PUT("/products/:id", productController.UpdateProduct)
 	private.DELETE("/products/:id", productController.DeleteProduct)
