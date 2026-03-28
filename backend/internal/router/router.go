@@ -6,12 +6,14 @@ import (
 	"github.com/labstack/echo/v5"
 	"piguy.nl/koopify/internal/auth"
 	"piguy.nl/koopify/internal/checkout"
+	"piguy.nl/koopify/internal/product"
 	"piguy.nl/koopify/internal/user"
 )
 
 func RegisterPublicRoutes(
 	e *echo.Echo,
 	userController *user.UserController,
+	productController *product.ProductController,
 	checkoutController *checkout.CheckoutController,
 ) {
 	public := e.Group("/public_api/v1")
@@ -19,10 +21,19 @@ func RegisterPublicRoutes(
 	public.POST("/sign_up", userController.CreateUser)
 	public.GET("/password_policy", userController.GetPasswordPolicy)
 
+	public.GET("/products", productController.ListAllProducts)
+	public.GET("/products/:id", productController.GetProduct)
+	public.GET("/categories", productController.ListCategories)
+
 	// public.GET("/adyen_test", checkoutController.TestCheckout)
 }
 
-func RegisterPrivateRoutes(e *echo.Echo, jwtSecret string, userController *user.UserController) {
+func RegisterPrivateRoutes(
+	e *echo.Echo,
+	jwtSecret string,
+	userController *user.UserController,
+	productController *product.ProductController,
+) {
 	jwtMiddleware := echojwt.WithConfig(echojwt.Config{
 		SigningKey: []byte(jwtSecret),
 		NewClaimsFunc: func(c *echo.Context) jwt.Claims {
@@ -31,6 +42,7 @@ func RegisterPrivateRoutes(e *echo.Echo, jwtSecret string, userController *user.
 	})
 
 	private := e.Group("/api/v1", jwtMiddleware)
+
 	private.GET("/users/me", userController.GetCurrentUser)
 	private.PATCH("/users/me", userController.UpdateCurrentUser)
 	private.POST("/users/me/deletion", userController.RequestDeletion)
@@ -42,4 +54,13 @@ func RegisterPrivateRoutes(e *echo.Echo, jwtSecret string, userController *user.
 	private.POST("/users/:id/deletion", userController.RequestUserDeletionAdmin)
 	private.DELETE("/users/:id/deletion", userController.CancelUserDeletionAdmin)
 	private.PATCH("/users/:id", userController.UpdateUserDetailsAdmin)
+
+	// only admin users can access these, the GET endpoint for /products and /products/:id is in the
+	// public router function
+	private.POST("/products", productController.CreateProduct)
+	private.PUT("/products/:id", productController.UpdateProduct)
+	private.DELETE("/products/:id", productController.DeleteProduct)
+
+	// only admin users can access this. the GET endpoint is in the public router fn
+	private.POST("/categories", productController.CreateCategory)
 }

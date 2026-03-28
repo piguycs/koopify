@@ -11,6 +11,7 @@ import (
 	"piguy.nl/koopify/internal"
 	"piguy.nl/koopify/internal/checkout"
 	"piguy.nl/koopify/internal/db"
+	"piguy.nl/koopify/internal/product"
 	"piguy.nl/koopify/internal/router"
 	"piguy.nl/koopify/internal/user"
 )
@@ -44,6 +45,10 @@ func main() {
 	userService := user.NewUserService(&userRepo)
 	userController := user.NewUserController(config.JwtSecret, userService)
 
+	productRepo := product.NewProductRepository(queries)
+	productService := product.NewProductService(&productRepo)
+	productController := product.NewProductController(productService)
+
 	checkoutController := checkout.NewCheckoutController(
 		config.AdyenApiKey,
 		config.AdyenMerchantAccount,
@@ -51,8 +56,8 @@ func main() {
 		config.CheckoutReturnUrl,
 	)
 
-	router.RegisterPublicRoutes(e, &userController, &checkoutController)
-	router.RegisterPrivateRoutes(e, config.JwtSecret, &userController)
+	router.RegisterPublicRoutes(e, &userController, &productController, &checkoutController)
+	router.RegisterPrivateRoutes(e, config.JwtSecret, &userController, &productController)
 
 	for _, route := range e.Router().Routes() {
 		log.Info("Backend API route registered", "method", route.Method, "path", route.Path)
