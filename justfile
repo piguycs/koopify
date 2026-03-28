@@ -18,6 +18,12 @@ sqlc *command="generate":
 [group("backend")]
 [working-directory: "backend"]
 run-backend:
+    air
+
+# Run the backend server (no live reload)
+[group("backend")]
+[working-directory: "backend"]
+run-backend-static:
     go run cmd/main.go
 
 [group("backend")]
