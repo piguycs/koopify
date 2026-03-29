@@ -22,13 +22,14 @@ type DeletionPolicy struct {
 }
 
 type Order struct {
-	ID             int64
-	UserID         int64
-	Status         string
-	TotalEurCents  int32
-	AdyenReference pgtype.Text
-	CreatedAt      pgtype.Timestamptz
-	UpdatedAt      pgtype.Timestamptz
+	ID                 int64
+	UserID             int64
+	Status             string
+	TotalEurCents      int32
+	AdyenReference     pgtype.Text
+	AdyenSessionResult pgtype.Text
+	CreatedAt          pgtype.Timestamptz
+	UpdatedAt          pgtype.Timestamptz
 }
 
 type OrderItem struct {
