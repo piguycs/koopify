@@ -49,15 +49,18 @@ func main() {
 	productService := product.NewProductService(&productRepo)
 	productController := product.NewProductController(productService)
 
-	checkoutController := checkout.NewCheckoutController(
+	checkoutRepo := checkout.NewCheckoutRepository(queries)
+	checkoutService := checkout.NewCheckoutService(
+		&checkoutRepo,
 		config.AdyenApiKey,
 		config.AdyenMerchantAccount,
 		config.AdyenThemeId,
 		config.CheckoutReturnUrl,
 	)
+	checkoutController := checkout.NewCheckoutController(checkoutService)
 
-	router.RegisterPublicRoutes(e, &userController, &productController, &checkoutController)
-	router.RegisterPrivateRoutes(e, config.JwtSecret, &userController, &productController)
+	router.RegisterPublicRoutes(e, &userController, &productController)
+	router.RegisterPrivateRoutes(e, config.JwtSecret, &userController, &productController, &checkoutController)
 
 	for _, route := range e.Router().Routes() {
 		log.Info("Backend API route registered", "method", route.Method, "path", route.Path)

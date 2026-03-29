@@ -14,7 +14,6 @@ func RegisterPublicRoutes(
 	e *echo.Echo,
 	userController *user.UserController,
 	productController *product.ProductController,
-	checkoutController *checkout.CheckoutController,
 ) {
 	public := e.Group("/public_api/v1")
 	public.POST("/login", userController.LoginUser)
@@ -24,8 +23,6 @@ func RegisterPublicRoutes(
 	public.GET("/products", productController.ListProducts)
 	public.GET("/products/:slug", productController.GetProductBySlug)
 	public.GET("/categories", productController.ListCategories)
-
-	// public.GET("/adyen_test", checkoutController.TestCheckout)
 }
 
 func RegisterPrivateRoutes(
@@ -33,6 +30,7 @@ func RegisterPrivateRoutes(
 	jwtSecret string,
 	userController *user.UserController,
 	productController *product.ProductController,
+	checkoutController *checkout.CheckoutController,
 ) {
 	jwtMiddleware := echojwt.WithConfig(echojwt.Config{
 		SigningKey: []byte(jwtSecret),
@@ -65,4 +63,9 @@ func RegisterPrivateRoutes(
 
 	// only admin users can access this. the GET endpoint is in the public router fn
 	private.POST("/categories", productController.CreateCategory)
+
+	// Checkout routes
+	private.POST("/checkout/sessions", checkoutController.CreateCheckoutSession)
+	private.GET("/orders", checkoutController.ListOrders)
+	private.GET("/orders/:id", checkoutController.GetOrder)
 }

@@ -1,83 +1,92 @@
 package checkout
 
 import (
-	"github.com/adyen/adyen-go-api-library/v21/src/adyen"
-	adyen_checkout "github.com/adyen/adyen-go-api-library/v21/src/checkout"
-	"github.com/adyen/adyen-go-api-library/v21/src/common"
+	"errors"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/charmbracelet/log"
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
+	"piguy.nl/koopify/internal"
+	"piguy.nl/koopify/internal/auth"
+	"piguy.nl/koopify/internal/response"
 )
 
-// checkout page is hosted on adyen's website, the frontend does not need to deal with any of this
-const checkoutType = "hosted"
-
 type CheckoutController struct {
-	apiKey          string
-	merchantAccount string
-	themeId         string
-	returnUrl       string
-
-	adyenClient *adyen.APIClient
+	service CheckoutService
 }
 
-func NewCheckoutController(apiKey, merchantAccount, themeId, returnUrl string) CheckoutController {
-	cc := CheckoutController{
-		apiKey:          apiKey,
-		merchantAccount: merchantAccount,
-		themeId:         themeId,
-		returnUrl:       returnUrl,
-	}
-
-	client := adyen.NewClient(&common.Config{
-		ApiKey:      cc.apiKey,
-		Environment: common.TestEnv,
-	})
-
-	cc.adyenClient = client
-
-	return cc
+func NewCheckoutController(service CheckoutService) CheckoutController {
+	return CheckoutController{service: service}
 }
 
-func (cc *CheckoutController) TestCheckout(ctx *echo.Context) error {
-	service := cc.adyenClient.Checkout()
-
-	createCheckoutSessionRequest := adyen_checkout.CreateCheckoutSessionRequest{
-		Reference:       uuid.New().String(),
-		Mode:            common.PtrString(checkoutType),
-		Amount:          eurAmount(10, 50),
-		MerchantAccount: cc.merchantAccount,
-		CountryCode:     common.PtrString("NL"),
-		ThemeId:         common.PtrString(cc.themeId),
-		ReturnUrl:       cc.returnUrl,
-	}
-
-	req := service.PaymentsApi.
-		SessionsInput().
-		IdempotencyKey(uuid.New().String()).
-		CreateCheckoutSessionRequest(createCheckoutSessionRequest)
-
-	res, httpRes, err := service.PaymentsApi.Sessions(ctx.Request().Context(), req)
-	// we dont do anything special with the http response, but it could be useful for logging/debugging
-	_ = httpRes
-
+func (cc *CheckoutController) CreateCheckoutSession(ctx *echo.Context) error {
+	userID, err := auth.UserIDFromToken(ctx)
 	if err != nil {
-		log.Error("Could not complete adyen request", "error", err)
-		return ctx.String(500, "could not complete request")
+		return ctx.JSON(http.StatusUnauthorized, response.NewError("unauthorized", err.Error()))
 	}
 
-	log.Info(res.Url)
-	if res.Url == nil {
-		log.Error("adyen's response url was empty")
-		return ctx.String(500, "could not complete request")
+	req, err := internal.BindAndValidate[CreateCheckoutSessionRequest](ctx)
+	if err != nil {
+		return err
 	}
 
-	return ctx.String(200, *res.Url)
+	session, err := cc.service.CreateCheckoutSession(ctx.Request().Context(), userID, *req)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrProductNotFound):
+			return ctx.JSON(http.StatusNotFound, response.NewError("product_not_found", err.Error()))
+		case errors.Is(err, ErrInsufficientStock):
+			return ctx.JSON(http.StatusBadRequest, response.NewError("insufficient_stock", err.Error()))
+		default:
+			if strings.Contains(err.Error(), "not available") {
+				return ctx.JSON(http.StatusBadRequest, response.NewError("product_unavailable", err.Error()))
+			}
+			log.Errorf("Error creating checkout session: %s", err.Error())
+			return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to create checkout session"))
+		}
+	}
+
+	return ctx.JSON(http.StatusCreated, session)
 }
 
-func eurAmount(euros int64, cents int64) adyen_checkout.Amount {
-	return adyen_checkout.Amount{
-		Currency: "EUR",
-		Value:    cents + (euros * 100),
+func (cc *CheckoutController) GetOrder(ctx *echo.Context) error {
+	userID, err := auth.UserIDFromToken(ctx)
+	if err != nil {
+		return ctx.JSON(http.StatusUnauthorized, response.NewError("unauthorized", err.Error()))
 	}
+
+	orderID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, response.NewError("invalid_request", "invalid order id"))
+	}
+
+	order, err := cc.service.GetOrder(ctx.Request().Context(), userID, orderID)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrOrderNotFound):
+			return ctx.JSON(http.StatusNotFound, response.NewError("order_not_found", err.Error()))
+		default:
+			log.Errorf("Error fetching order %d: %s", orderID, err.Error())
+			return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to fetch order"))
+		}
+	}
+
+	return ctx.JSON(http.StatusOK, order)
+}
+
+func (cc *CheckoutController) ListOrders(ctx *echo.Context) error {
+	userID, err := auth.UserIDFromToken(ctx)
+	if err != nil {
+		return ctx.JSON(http.StatusUnauthorized, response.NewError("unauthorized", err.Error()))
+	}
+
+	orders, err := cc.service.ListOrders(ctx.Request().Context(), userID)
+	if err != nil {
+		log.Errorf("Error listing orders for user %d: %s", userID, err.Error())
+		return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to list orders"))
+	}
+
+	return ctx.JSON(http.StatusOK, orders)
 }
