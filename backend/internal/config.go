@@ -2,10 +2,6 @@ package internal
 
 import (
 	"crypto/tls"
-	"errors"
-	"strings"
-
-	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
@@ -29,16 +25,16 @@ func LoadConfig() (Config, error) {
 	hostAddr := GetEnvDefault("HOST_ADDR", DefaultHostAddr)
 
 	var jwtSecret, adyenApiKey, adyenMerchantAccount, adyenThemeId, checkoutReturnUrl,
-		resendApiKey, sendingEmailAddress *string
+		resendApiKey, sendingEmailAddress string
 
 	err := GetEnvs([]EnvVarDef{
-		{Value: jwtSecret, Var: "JWT_SECRET"},
-		{Value: adyenApiKey, Var: "ADYEN_API_KEY"},
-		{Value: adyenMerchantAccount, Var: "ADYEN_MERCHANT_ACCOUNT"},
-		{Value: adyenThemeId, Var: "ADYEN_THEME_ID"},
-		{Value: checkoutReturnUrl, Var: "CHECKOUT_RETURN_URL"},
-		{Value: resendApiKey, Var: "RESEND_API_KEY"},
-		{Value: sendingEmailAddress, Var: "SENDING_EMAIL_ADDRESS"},
+		{Value: &jwtSecret, Var: "JWT_SECRET"},
+		{Value: &adyenApiKey, Var: "ADYEN_API_KEY"},
+		{Value: &adyenMerchantAccount, Var: "ADYEN_MERCHANT_ACCOUNT"},
+		{Value: &adyenThemeId, Var: "ADYEN_THEME_ID"},
+		{Value: &checkoutReturnUrl, Var: "CHECKOUT_RETURN_URL"},
+		{Value: &resendApiKey, Var: "RESEND_API_KEY"},
+		{Value: &sendingEmailAddress, Var: "SENDING_EMAIL_ADDRESS"},
 	})
 
 	if err != nil {
@@ -52,12 +48,12 @@ func LoadConfig() (Config, error) {
 	}
 
 	return Config{
-		JwtSecret:            *jwtSecret,
+		JwtSecret:            jwtSecret,
 		PgDb:                 pgdb,
-		AdyenApiKey:          *adyenApiKey,
-		AdyenMerchantAccount: *adyenMerchantAccount,
-		AdyenThemeId:         *adyenThemeId,
-		CheckoutReturnUrl:    *checkoutReturnUrl,
+		AdyenApiKey:          adyenApiKey,
+		AdyenMerchantAccount: adyenMerchantAccount,
+		AdyenThemeId:         adyenThemeId,
+		CheckoutReturnUrl:    checkoutReturnUrl,
 		HostAddr:             hostAddr,
 		TlsConfig:            tlsConfig,
 	}, nil
