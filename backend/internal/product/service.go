@@ -158,6 +158,69 @@ func (s *ProductService) CreateCategory(
 	return &resp, nil
 }
 
+func (s *ProductService) ListActiveProductsPaginated(
+	ctx context.Context,
+	start int32,
+	end int32,
+) (*[]ProductResponse, error) {
+	if start < 0 {
+		start = 0
+	}
+	if end <= start {
+		end = start
+	}
+
+	limit := end - start
+	offset := start
+
+	products, err := s.repo.ListProductsPaginated(ctx, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	enriched, err := s.enrichProducts(ctx, products)
+	if err != nil {
+		return nil, err
+	}
+
+	return &enriched, nil
+}
+
+// ListActiveProductsPaginatedByCategory returns active products in a category with index-based pagination.
+func (s *ProductService) ListActiveProductsPaginatedByCategory(
+	ctx context.Context,
+	categorySlug string,
+	start int32,
+	end int32,
+) (*[]ProductResponse, error) {
+	cat, err := s.repo.GetCategoryBySlug(ctx, categorySlug)
+	if err != nil {
+		return nil, err
+	}
+
+	if start < 0 {
+		start = 0
+	}
+	if end <= start {
+		end = start
+	}
+
+	limit := end - start
+	offset := start
+
+	products, err := s.repo.ListProductsPaginatedByCategory(ctx, cat.ID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	enriched, err := s.enrichProducts(ctx, products)
+	if err != nil {
+		return nil, err
+	}
+
+	return &enriched, nil
+}
+
 // replaces the full category set for a producs. It removes categories which are not wanted and
 // adds new ones
 func (s *ProductService) setProductCategories(
@@ -217,7 +280,7 @@ func (s *ProductService) enrichProduct(ctx context.Context, p *db.Product) (*Pro
 	return &resp, nil
 }
 
-// fetches categories for each product and builds a []ProductResponse.
+// fetches categories for each product and builds a `[]ProductResponse`
 func (s *ProductService) enrichProducts(ctx context.Context, products []db.Product) ([]ProductResponse, error) {
 	result := make([]ProductResponse, len(products))
 	for i := range products {

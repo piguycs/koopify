@@ -28,6 +28,12 @@ type ProductRepository interface {
 	ListCategories(ctx context.Context) ([]db.Category, error)
 	GetCategoryBySlug(ctx context.Context, slug string) (*db.Category, error)
 	CreateCategory(ctx context.Context, params db.CreateCategoryParams) (*db.Category, error)
+
+	// Pagination methods
+	ListProductsPaginated(ctx context.Context, limit int32, offset int32) ([]db.Product, error)
+	ListProductsPaginatedByCategory(ctx context.Context, categoryID int64, limit int32, offset int32) ([]db.Product, error)
+	CountActiveProducts(ctx context.Context) (int64, error)
+	CountActiveProductsByCategory(ctx context.Context, categoryID int64) (int64, error)
 }
 
 // PGProductRepository is the PostgreSQL implementation of ProductRepository.
@@ -162,4 +168,36 @@ func (r PGProductRepository) CreateCategory(
 		return nil, err
 	}
 	return &c, nil
+}
+
+func (r PGProductRepository) ListProductsPaginated(
+	ctx context.Context,
+	limit int32,
+	offset int32,
+) ([]db.Product, error) {
+	return r.queries.ListProductsPaginated(ctx, db.ListProductsPaginatedParams{
+		Limit:  limit,
+		Offset: offset,
+	})
+}
+
+func (r PGProductRepository) ListProductsPaginatedByCategory(
+	ctx context.Context,
+	categoryID int64,
+	limit int32,
+	offset int32,
+) ([]db.Product, error) {
+	return r.queries.ListProductsPaginatedByCategory(ctx, db.ListProductsPaginatedByCategoryParams{
+		CategoryID: categoryID,
+		Limit:      limit,
+		Offset:     offset,
+	})
+}
+
+func (r PGProductRepository) CountActiveProducts(ctx context.Context) (int64, error) {
+	return r.queries.CountActiveProducts(ctx)
+}
+
+func (r PGProductRepository) CountActiveProductsByCategory(ctx context.Context, categoryID int64) (int64, error) {
+	return r.queries.CountActiveProductsByCategory(ctx, categoryID)
 }
