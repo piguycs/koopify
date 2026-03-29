@@ -70,7 +70,7 @@ const handleSubmit = async () => {
                 <div class="auth-header">
                     <p class="eyebrow">Access</p>
                     <h1>Sign up</h1>
-                    <p class="subtle">Claim your locker.</p>
+                    <p class="subtle">Welcome, Tenno</p>
                 </div>
 
                 <form class="auth-form" @submit.prevent="handleSubmit">
