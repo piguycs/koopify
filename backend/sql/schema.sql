@@ -49,6 +49,7 @@ create table orders (
     status          varchar not null default 'pending',
     total_eur_cents integer not null check (total_eur_cents >= 0),
     adyen_reference varchar,
+    adyen_session_result varchar,
     created_at      timestamptz not null default now(),
     updated_at      timestamptz not null default now()
 );
