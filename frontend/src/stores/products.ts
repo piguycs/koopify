@@ -62,10 +62,13 @@ function authToken(): string {
 export const useProductStore = defineStore("products", {
     actions: {
         // Public
-        async listActiveProducts(start: number, end: number, categorySlug?: string): Promise<ProductResponsePage> {
+        async listActiveProducts(start: number, end: number, categorySlug?: string, searchTerm?: string): Promise<ProductResponsePage> {
             let query = `start=${start}&end=${end}`
             if (categorySlug) {
                 query += `&category=${encodeURIComponent(categorySlug)}`
+            }
+            if (searchTerm) {
+                query += `&search=${encodeURIComponent(searchTerm)}`
             }
             return apiClient.get<ProductResponsePage>(`/public_api/v1/products?${query}`)
         },

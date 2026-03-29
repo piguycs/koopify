@@ -1,34 +1,11 @@
 <script setup lang="ts">
-import { RouterLink } from "vue-router"
 import AppLayout from "@/layouts/AppLayout.vue"
 import Button from "@/components/Button.vue"
+import router from "@/router";
 
-const featuredProducts = [
-    {
-        name: "Ember Foil Pack",
-        price: "120 Coins",
-        note: "Six cards, one foil guaranteed.",
-        tag: "Hot",
-    },
-    {
-        name: "Arcane Deck Box",
-        price: "260 Coins",
-        note: "Rigid shell, magnetic latch.",
-        tag: "Gear",
-    },
-    {
-        name: "Guild Token Set",
-        price: "90 Coins",
-        note: "24 acrylic counters.",
-        tag: "Utility",
-    },
-    {
-        name: "Boss Fight Playmat",
-        price: "180 Coins",
-        note: "Stitched edges, matte finish.",
-        tag: "Mat",
-    },
-]
+function gotoShop() {
+    router.push({name: "catalogue"})
+}
 </script>
 
 <template>
@@ -36,32 +13,9 @@ const featuredProducts = [
         <section class="hero">
             <div class="hero-copy">
                 <p class="eyebrow">koopify</p>
-                <h1>Do IRL trading in this store</h1>
-                <p class="lead">A fictional store to sell fictional videogame items.</p>
-                <div class="hero-actions">
-                    <RouterLink class="primary" to="/catalogue">Shop now</RouterLink>
-                </div>
-            </div>
-        </section>
-
-        <section class="section">
-            <div class="section-header">
-                <h3>Featured stock</h3>
-                <p class="subtle">Small rotation, big pulls.</p>
-            </div>
-            <div class="product-grid">
-                <article v-for="product in featuredProducts" :key="product.name" class="product">
-                    <div class="product-tag">{{ product.tag }}</div>
-                    <div class="product-media"></div>
-                    <div class="product-info">
-                        <h4>{{ product.name }}</h4>
-                        <p>{{ product.note }}</p>
-                        <div class="product-footer">
-                            <span class="price">{{ product.price }}</span>
-                            <Button variant="primary" size="small">Add</Button>
-                        </div>
-                    </div>
-                </article>
+                <h1>Buy various gaming related products here</h1>
+                <p class="lead">A fictional store to sell items</p>
+                <Button variant="primary" @click="gotoShop">Shop now</Button>
             </div>
         </section>
     </AppLayout>

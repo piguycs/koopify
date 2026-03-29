@@ -21,18 +21,7 @@ const errorMessage = ref("")
 
 const selectedCategory = ref<string | null>(null)
 const searchQuery = ref("")
-
-const filteredProducts = computed(() => {
-    if (!searchQuery.value.trim()) {
-        return products.value
-    }
-    const query = searchQuery.value.toLowerCase()
-    return products.value.filter(
-        p =>
-            p.name.toLowerCase().includes(query) ||
-            p.description.toLowerCase().includes(query)
-    )
-})
+const submittedSearch = ref("")
 
 const hasNextPage = computed(() => currentEnd.value < totalProducts.value)
 const hasPrevPage = computed(() => currentStart.value > 0)
@@ -47,7 +36,8 @@ async function loadProducts() {
         const result = await productStore.listActiveProducts(
             currentStart.value,
             currentEnd.value,
-            selectedCategory.value || undefined
+            selectedCategory.value || undefined,
+            submittedSearch.value || undefined
         )
         products.value = result.products
         totalProducts.value = result.totalProducts
@@ -56,6 +46,13 @@ async function loadProducts() {
     } finally {
         isLoading.value = false
     }
+}
+
+function searchProducts() {
+    submittedSearch.value = searchQuery.value.trim()
+    currentStart.value = 0
+    currentEnd.value = DEFAULT_PER_PAGE
+    loadProducts()
 }
 
 async function loadCategories() {
@@ -108,6 +105,8 @@ onMounted(() => {
 })
 
 watch(selectedCategory, () => {
+    submittedSearch.value = ""
+    searchQuery.value = ""
     loadProducts()
 })
 </script>
@@ -127,9 +126,13 @@ watch(selectedCategory, () => {
                     <input
                         v-model="searchQuery"
                         type="text"
-                        placeholder="Search products..."
+                        placeholder="Search products"
                         class="search-input"
+                        @keyup.enter="searchProducts"
                     />
+                    <Button variant="ghost" @click="searchProducts">
+                        Search
+                    </Button>
                 </div>
                 <div class="category-filters">
                     <button
@@ -158,14 +161,14 @@ watch(selectedCategory, () => {
             <p>{{ errorMessage }}</p>
         </section>
 
-        <section v-else-if="filteredProducts.length === 0" class="empty-state">
+        <section v-else-if="products.length === 0" class="empty-state">
             <p>No products found.</p>
         </section>
 
         <section v-else class="product-grid-section">
             <div class="product-grid">
                 <article
-                    v-for="product in filteredProducts"
+                    v-for="product in products"
                     :key="product.id"
                     class="product-card"
                 >
@@ -302,13 +305,16 @@ watch(selectedCategory, () => {
 
 .filters-container {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    /* align-items: center; */
     gap: 16px;
     flex-wrap: wrap;
 }
 
 .search-box {
     flex-shrink: 0;
+    display: flex;
+    gap: 8px;
 }
 
 .category-filters {

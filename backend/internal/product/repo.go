@@ -30,10 +30,10 @@ type ProductRepository interface {
 	CreateCategory(ctx context.Context, params db.CreateCategoryParams) (*db.Category, error)
 
 	// Pagination methods
-	ListProductsPaginated(ctx context.Context, limit int32, offset int32) ([]db.Product, error)
-	ListProductsPaginatedByCategory(ctx context.Context, categoryID int64, limit int32, offset int32) ([]db.Product, error)
-	CountActiveProducts(ctx context.Context) (int64, error)
-	CountActiveProductsByCategory(ctx context.Context, categoryID int64) (int64, error)
+	ListProductsPaginated(ctx context.Context, limit int32, offset int32, searchTerm string) ([]db.Product, error)
+	ListProductsPaginatedByCategory(ctx context.Context, categoryID int64, limit int32, offset int32, searchTerm string) ([]db.Product, error)
+	CountActiveProducts(ctx context.Context, searchTerm string) (int64, error)
+	CountActiveProductsByCategory(ctx context.Context, categoryID int64, searchTerm string) (int64, error)
 }
 
 // PGProductRepository is the PostgreSQL implementation of ProductRepository.
@@ -174,10 +174,12 @@ func (r PGProductRepository) ListProductsPaginated(
 	ctx context.Context,
 	limit int32,
 	offset int32,
+	searchTerm string,
 ) ([]db.Product, error) {
 	return r.queries.ListProductsPaginated(ctx, db.ListProductsPaginatedParams{
-		Limit:  limit,
-		Offset: offset,
+		Limit:   limit,
+		Offset:  offset,
+		Column3: searchTerm,
 	})
 }
 
@@ -186,18 +188,23 @@ func (r PGProductRepository) ListProductsPaginatedByCategory(
 	categoryID int64,
 	limit int32,
 	offset int32,
+	searchTerm string,
 ) ([]db.Product, error) {
 	return r.queries.ListProductsPaginatedByCategory(ctx, db.ListProductsPaginatedByCategoryParams{
 		CategoryID: categoryID,
 		Limit:      limit,
 		Offset:     offset,
+		Column4:    searchTerm,
 	})
 }
 
-func (r PGProductRepository) CountActiveProducts(ctx context.Context) (int64, error) {
-	return r.queries.CountActiveProducts(ctx)
+func (r PGProductRepository) CountActiveProducts(ctx context.Context, searchTerm string) (int64, error) {
+	return r.queries.CountActiveProducts(ctx, searchTerm)
 }
 
-func (r PGProductRepository) CountActiveProductsByCategory(ctx context.Context, categoryID int64) (int64, error) {
-	return r.queries.CountActiveProductsByCategory(ctx, categoryID)
+func (r PGProductRepository) CountActiveProductsByCategory(ctx context.Context, categoryID int64, searchTerm string) (int64, error) {
+	return r.queries.CountActiveProductsByCategory(ctx, db.CountActiveProductsByCategoryParams{
+		CategoryID: categoryID,
+		Column2:    searchTerm,
+	})
 }

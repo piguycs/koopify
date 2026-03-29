@@ -162,6 +162,7 @@ func (s *ProductService) ListActiveProductsPaginated(
 	ctx context.Context,
 	start int32,
 	end int32,
+	searchTerm string,
 ) (*ProductResponsePage, error) {
 	if start < 0 {
 		start = 0
@@ -173,12 +174,12 @@ func (s *ProductService) ListActiveProductsPaginated(
 	limit := end - start
 	offset := start
 
-	products, err := s.repo.ListProductsPaginated(ctx, limit, offset)
+	products, err := s.repo.ListProductsPaginated(ctx, limit, offset, searchTerm)
 	if err != nil {
 		return nil, err
 	}
 
-	totalProducts, err := s.repo.CountActiveProducts(ctx)
+	totalProducts, err := s.repo.CountActiveProducts(ctx, searchTerm)
 	if err != nil {
 		return nil, err
 	}
@@ -202,6 +203,7 @@ func (s *ProductService) ListActiveProductsPaginatedByCategory(
 	categorySlug string,
 	start int32,
 	end int32,
+	searchTerm string,
 ) (*ProductResponsePage, error) {
 	cat, err := s.repo.GetCategoryBySlug(ctx, categorySlug)
 	if err != nil {
@@ -218,12 +220,12 @@ func (s *ProductService) ListActiveProductsPaginatedByCategory(
 	limit := end - start
 	offset := start
 
-	products, err := s.repo.ListProductsPaginatedByCategory(ctx, cat.ID, limit, offset)
+	products, err := s.repo.ListProductsPaginatedByCategory(ctx, cat.ID, limit, offset, searchTerm)
 	if err != nil {
 		return nil, err
 	}
 
-	totalProducts, err := s.repo.CountActiveProductsByCategory(ctx, cat.ID)
+	totalProducts, err := s.repo.CountActiveProductsByCategory(ctx, cat.ID, searchTerm)
 	if err != nil {
 		return nil, err
 	}

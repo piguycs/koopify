@@ -5,11 +5,13 @@ import AppLayout from "@/layouts/AppLayout.vue"
 import Button from "@/components/Button.vue"
 import { useProductStore, type ProductResponse } from "@/stores/products"
 import { useAppStore } from "@/stores/app"
+import { useAuthStore } from "@/stores/auth"
 
 const route = useRoute()
 const router = useRouter()
 const productStore = useProductStore()
 const appStore = useAppStore()
+const authStore = useAuthStore()
 
 const product = ref<ProductResponse | null>(null)
 const isLoading = ref(true)
@@ -44,7 +46,15 @@ function addToCart() {
     for (let i = 0; i < quantity.value; i++) {
         appStore.incrementCart()
     }
-    router.push("/catalogue")
+    router.push("/")
+}
+
+function gotoModifyProduct() {
+    const id = product.value?.id;
+    let path = "/admin/products/" + id
+
+    let backUrl: string | undefined = "/product/" + product.value?.slug
+    if (id) router.push({ path, state: { backUrl } })
 }
 
 function incrementQuantity() {
@@ -170,6 +180,9 @@ onMounted(() => {
 
                     <Button variant="primary" @click="addToCart">
                         Add to Cart
+                    </Button>
+                    <Button v-if="authStore.currentUser?.admin" variant="ghost" @click="gotoModifyProduct">
+                        Modify this product
                     </Button>
                 </div>
             </div>

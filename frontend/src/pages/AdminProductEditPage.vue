@@ -32,6 +32,8 @@ const inStock = ref(false)
 const isActive = ref(true)
 const selectedCategories = ref<CategoryResponse[]>([])
 
+let backUrl: string | null = null
+
 // Category dropdown
 const allCategories = ref<CategoryResponse[]>([])
 const categoryInput = ref("")
@@ -165,10 +167,12 @@ async function save() {
     try {
         if (isNew.value) {
             await productStore.adminCreateProduct(payload)
-            router.push({ name: "admin-products", state: { toast: "Product created" } })
+            // router.push({ name: "admin-products", state: { toast: "Product created" } })
+            goBackWithToast("Product created")
         } else if (productId.value !== null) {
             await productStore.adminUpdateProduct(productId.value, payload)
-            router.push({ name: "admin-products", state: { toast: "Product saved" } })
+            // router.push({ name: "admin-products", state: { toast: "Product saved" } })
+            goBackWithToast("Product saved")
         }
     } catch (err) {
         errorMessageToast(err, "Failed to save product")
@@ -177,8 +181,19 @@ async function save() {
     }
 }
 
+/// TOAST WILL BE IGNORED IF THE `backUrl` DOES NOT SUPPORT TOAST AND IT IS SET
+function goBackWithToast(toast: string) {
+    if (backUrl) {
+        router.push({ path: backUrl, state: { toast } })
+    } else {
+        router.push({ name: "admin-products", state: { toast } })
+    }
+    
+}
+
 function goBack() {
-    router.push({ name: "admin-products" })
+    router.back()
+    // router.push({ name: "admin-products" })
 }
 
 async function loadProduct() {
@@ -214,8 +229,12 @@ async function loadCategories() {
 }
 
 onMounted(async () => {
+    const backUrlData = (history.state as Record<string, unknown>)?.backUrl
+    if (typeof backUrlData === "string" && backUrlData) backUrl = backUrlData;
+
     await Promise.all([loadCategories(), loadProduct()])
 })
+
 </script>
 
 <template>

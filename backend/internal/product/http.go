@@ -27,6 +27,7 @@ func NewProductController(service ProductService) ProductController {
 // filter by category. This also returns the start, end, total and current alongside the data
 // Query params:
 //   - category=<slug>: filter by category (optional)
+//   - search=<text>: search in name and description (optional)
 //   - start=<int>: starting index (0-based, default: 0)
 //   - end=<int>: ending index (exclusive, default: 16)
 //
@@ -48,9 +49,10 @@ func (pc *ProductController) ListProducts(ctx *echo.Context) error {
 	}
 
 	categorySlug := ctx.QueryParam("category")
+	searchTerm := ctx.QueryParam("search")
 
 	if categorySlug != "" {
-		result, err := pc.service.ListActiveProductsPaginatedByCategory(ctx.Request().Context(), categorySlug, start, end)
+		result, err := pc.service.ListActiveProductsPaginatedByCategory(ctx.Request().Context(), categorySlug, start, end, searchTerm)
 		if err != nil {
 			switch {
 			case errors.Is(err, ErrCategoryNotFound):
@@ -62,7 +64,7 @@ func (pc *ProductController) ListProducts(ctx *echo.Context) error {
 		}
 		return ctx.JSON(http.StatusOK, result)
 	} else {
-		result, err := pc.service.ListActiveProductsPaginated(ctx.Request().Context(), start, end)
+		result, err := pc.service.ListActiveProductsPaginated(ctx.Request().Context(), start, end, searchTerm)
 		if err != nil {
 			log.Errorf("Error listing products: %s", err.Error())
 			return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to list products"))

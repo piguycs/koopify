@@ -51,11 +51,13 @@ func (q *Queries) CancelUserDeletion(ctx context.Context, id int64) (User, error
 }
 
 const countActiveProducts = `-- name: CountActiveProducts :one
-select count(*) from products where is_active = true
+select count(*) from products
+where is_active = true
+  and (coalesce($1, '') = '' or name ilike '%' || $1 || '%' or description ilike '%' || $1 || '%')
 `
 
-func (q *Queries) CountActiveProducts(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countActiveProducts)
+func (q *Queries) CountActiveProducts(ctx context.Context, dollar_1 interface{}) (int64, error) {
+	row := q.db.QueryRow(ctx, countActiveProducts, dollar_1)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -65,11 +67,18 @@ const countActiveProductsByCategory = `-- name: CountActiveProductsByCategory :o
 select count(*)
 from products p
 join product_categories pc on p.id = pc.product_id
-where pc.category_id = $1 and p.is_active = true
+where pc.category_id = $1
+  and p.is_active = true
+  and (coalesce($2, '') = '' or p.name ilike '%' || $2 || '%' or p.description ilike '%' || $2 || '%')
 `
 
-func (q *Queries) CountActiveProductsByCategory(ctx context.Context, categoryID int64) (int64, error) {
-	row := q.db.QueryRow(ctx, countActiveProductsByCategory, categoryID)
+type CountActiveProductsByCategoryParams struct {
+	CategoryID int64
+	Column2    interface{}
+}
+
+func (q *Queries) CountActiveProductsByCategory(ctx context.Context, arg CountActiveProductsByCategoryParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countActiveProductsByCategory, arg.CategoryID, arg.Column2)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -603,18 +612,21 @@ select id,
 	is_active,
 	created_at,
 	updated_at
-from products where is_active = true
+from products
+where is_active = true
+  and (coalesce($3, '') = '' or name ilike '%' || $3 || '%' or description ilike '%' || $3 || '%')
 order by created_at desc
 limit $1 offset $2
 `
 
 type ListProductsPaginatedParams struct {
-	Limit  int32
-	Offset int32
+	Limit   int32
+	Offset  int32
+	Column3 interface{}
 }
 
 func (q *Queries) ListProductsPaginated(ctx context.Context, arg ListProductsPaginatedParams) ([]Product, error) {
-	rows, err := q.db.Query(ctx, listProductsPaginated, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listProductsPaginated, arg.Limit, arg.Offset, arg.Column3)
 	if err != nil {
 		return nil, err
 	}
@@ -662,7 +674,9 @@ select
 	p.updated_at
 from products p
 join product_categories pc on p.id = pc.product_id
-where pc.category_id = $1 and p.is_active = true
+where pc.category_id = $1
+  and p.is_active = true
+  and (coalesce($4, '') = '' or p.name ilike '%' || $4 || '%' or p.description ilike '%' || $4 || '%')
 order by p.created_at desc
 limit $2 offset $3
 `
@@ -671,10 +685,16 @@ type ListProductsPaginatedByCategoryParams struct {
 	CategoryID int64
 	Limit      int32
 	Offset     int32
+	Column4    interface{}
 }
 
 func (q *Queries) ListProductsPaginatedByCategory(ctx context.Context, arg ListProductsPaginatedByCategoryParams) ([]Product, error) {
-	rows, err := q.db.Query(ctx, listProductsPaginatedByCategory, arg.CategoryID, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listProductsPaginatedByCategory,
+		arg.CategoryID,
+		arg.Limit,
+		arg.Offset,
+		arg.Column4,
+	)
 	if err != nil {
 		return nil, err
 	}

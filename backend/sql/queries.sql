@@ -162,7 +162,9 @@ select id,
 	is_active,
 	created_at,
 	updated_at
-from products where is_active = true
+from products
+where is_active = true
+  and (coalesce($3, '') = '' or name ilike '%' || $3 || '%' or description ilike '%' || $3 || '%')
 order by created_at desc
 limit $1 offset $2;
 
@@ -182,18 +184,24 @@ select
 	p.updated_at
 from products p
 join product_categories pc on p.id = pc.product_id
-where pc.category_id = $1 and p.is_active = true
+where pc.category_id = $1
+  and p.is_active = true
+  and (coalesce($4, '') = '' or p.name ilike '%' || $4 || '%' or p.description ilike '%' || $4 || '%')
 order by p.created_at desc
 limit $2 offset $3;
 
 -- name: CountActiveProducts :one
-select count(*) from products where is_active = true;
+select count(*) from products
+where is_active = true
+  and (coalesce($1, '') = '' or name ilike '%' || $1 || '%' or description ilike '%' || $1 || '%');
 
 -- name: CountActiveProductsByCategory :one
 select count(*)
 from products p
 join product_categories pc on p.id = pc.product_id
-where pc.category_id = $1 and p.is_active = true;
+where pc.category_id = $1
+  and p.is_active = true
+  and (coalesce($2, '') = '' or p.name ilike '%' || $2 || '%' or p.description ilike '%' || $2 || '%');
 
 -- Categories
 -- name: CreateCategory :one
