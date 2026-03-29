@@ -82,8 +82,15 @@ export const useProductStore = defineStore("products", {
         },
 
         // Admin
-        async adminListAllProducts(): Promise<ProductResponse[]> {
-            return apiClient.get<ProductResponse[]>("/api/v1/products", {
+        async adminListAllProducts(start: number, end: number, categorySlug?: string, searchTerm?: string): Promise<ProductResponsePage> {
+            let query = `start=${start}&end=${end}`
+            if (categorySlug) {
+                query += `&category=${encodeURIComponent(categorySlug)}`
+            }
+            if (searchTerm) {
+                query += `&search=${encodeURIComponent(searchTerm)}`
+            }
+            return apiClient.get<ProductResponsePage>(`/api/v1/products?${query}`, {
                 authToken: authToken(),
             })
         },

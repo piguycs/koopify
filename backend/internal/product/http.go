@@ -107,6 +107,52 @@ func (pc *ProductController) ListAllProducts(ctx *echo.Context) error {
 	return ctx.JSON(http.StatusOK, products)
 }
 
+// ListAllProductsPaginated is an admin handler with pagination, search, and category filter.
+func (pc *ProductController) ListAllProductsPaginated(ctx *echo.Context) error {
+	if !auth.IsAdminFromToken(ctx) {
+		return ctx.JSON(http.StatusForbidden, response.NewError("forbidden", "admin access required"))
+	}
+
+	start := int32(0)
+	end := int32(DefaultPaginationLimit)
+
+	if startParam := ctx.QueryParam("start"); startParam != "" {
+		if s, err := strconv.ParseInt(startParam, 10, 32); err == nil {
+			start = int32(s)
+		}
+	}
+
+	if endParam := ctx.QueryParam("end"); endParam != "" {
+		if e, err := strconv.ParseInt(endParam, 10, 32); err == nil && e > int64(start) {
+			end = int32(e)
+		}
+	}
+
+	categorySlug := ctx.QueryParam("category")
+	searchTerm := ctx.QueryParam("search")
+
+	if categorySlug != "" {
+		result, err := pc.service.ListAllProductsPaginatedByCategory(ctx.Request().Context(), categorySlug, start, end, searchTerm)
+		if err != nil {
+			switch {
+			case errors.Is(err, ErrCategoryNotFound):
+				return ctx.JSON(http.StatusNotFound, response.NewError("category_not_found", err.Error()))
+			default:
+				log.Errorf("Error listing all products by category %q: %s", categorySlug, err.Error())
+				return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to list products"))
+			}
+		}
+		return ctx.JSON(http.StatusOK, result)
+	}
+
+	result, err := pc.service.ListAllProductsPaginated(ctx.Request().Context(), start, end, searchTerm)
+	if err != nil {
+		log.Errorf("Error listing all products: %s", err.Error())
+		return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to list products"))
+	}
+	return ctx.JSON(http.StatusOK, result)
+}
+
 // GetProduct is an admin handler that returns a single product by numeric ID.
 func (pc *ProductController) GetProduct(ctx *echo.Context) error {
 	if !auth.IsAdminFromToken(ctx) {

@@ -243,6 +243,92 @@ func (s *ProductService) ListActiveProductsPaginatedByCategory(
 	}, nil
 }
 
+// Admin: ListAllProductsPaginated returns all products (including inactive) with pagination and search.
+func (s *ProductService) ListAllProductsPaginated(
+	ctx context.Context,
+	start int32,
+	end int32,
+	searchTerm string,
+) (*ProductResponsePage, error) {
+	if start < 0 {
+		start = 0
+	}
+	if end <= start {
+		end = start
+	}
+
+	limit := end - start
+	offset := start
+
+	products, err := s.repo.ListAllProductsPaginated(ctx, limit, offset, searchTerm)
+	if err != nil {
+		return nil, err
+	}
+
+	totalProducts, err := s.repo.CountAllProducts(ctx, searchTerm)
+	if err != nil {
+		return nil, err
+	}
+
+	enriched, err := s.enrichProducts(ctx, products)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ProductResponsePage{
+		Start:         start,
+		End:           int32(len(enriched)),
+		TotalProducts: totalProducts,
+		Products:      enriched,
+	}, nil
+}
+
+// Admin: ListAllProductsPaginatedByCategory returns all products in a category with pagination and search.
+func (s *ProductService) ListAllProductsPaginatedByCategory(
+	ctx context.Context,
+	categorySlug string,
+	start int32,
+	end int32,
+	searchTerm string,
+) (*ProductResponsePage, error) {
+	cat, err := s.repo.GetCategoryBySlug(ctx, categorySlug)
+	if err != nil {
+		return nil, err
+	}
+
+	if start < 0 {
+		start = 0
+	}
+	if end <= start {
+		end = start
+	}
+
+	limit := end - start
+	offset := start
+
+	products, err := s.repo.ListAllProductsPaginatedByCategory(ctx, cat.ID, limit, offset, searchTerm)
+	if err != nil {
+		return nil, err
+	}
+
+	totalProducts, err := s.repo.CountAllProductsByCategory(ctx, cat.ID, searchTerm)
+	if err != nil {
+		return nil, err
+	}
+
+	enriched, err := s.enrichProducts(ctx, products)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ProductResponsePage{
+		Start:         start,
+		End:           int32(len(enriched)),
+		TotalProducts: totalProducts,
+		Products:      enriched,
+	}, nil
+}
+
 // replaces the full category set for a producs. It removes categories which are not wanted and
 // adds new ones
 func (s *ProductService) setProductCategories(

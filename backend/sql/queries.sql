@@ -203,6 +203,60 @@ where pc.category_id = $1
   and p.is_active = true
   and (coalesce($2, '') = '' or p.name ilike '%' || $2 || '%' or p.description ilike '%' || $2 || '%');
 
+-- Admin: List all products (including inactive) with pagination and search
+-- name: ListAllProductsPaginated :many
+select id,
+	name,
+	slug,
+	description,
+	image_url,
+	price_eur_cents,
+	discount_percent,
+	inventory_count,
+	in_stock,
+	is_active,
+	created_at,
+	updated_at
+from products
+where (coalesce($3, '') = '' or name ilike '%' || $3 || '%' or description ilike '%' || $3 || '%')
+order by created_at desc
+limit $1 offset $2;
+
+-- Admin: List all products by category with pagination and search
+-- name: ListAllProductsPaginatedByCategory :many
+select
+	p.id,
+	p.name,
+	p.slug,
+	p.description,
+	p.image_url,
+	p.price_eur_cents,
+	p.discount_percent,
+	p.inventory_count,
+	p.in_stock,
+	p.is_active,
+	p.created_at,
+	p.updated_at
+from products p
+join product_categories pc on p.id = pc.product_id
+where pc.category_id = $1
+  and (coalesce($4, '') = '' or p.name ilike '%' || $4 || '%' or p.description ilike '%' || $4 || '%')
+order by p.created_at desc
+limit $2 offset $3;
+
+-- Admin: Count all products (including inactive) with search
+-- name: CountAllProducts :one
+select count(*) from products
+where (coalesce($1, '') = '' or name ilike '%' || $1 || '%' or description ilike '%' || $1 || '%');
+
+-- Admin: Count all products by category with search
+-- name: CountAllProductsByCategory :one
+select count(*)
+from products p
+join product_categories pc on p.id = pc.product_id
+where pc.category_id = $1
+  and (coalesce($2, '') = '' or p.name ilike '%' || $2 || '%' or p.description ilike '%' || $2 || '%');
+
 -- Categories
 -- name: CreateCategory :one
 insert into categories (name, slug)

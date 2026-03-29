@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue"
+import { ref, computed, onMounted, watch } from "vue"
 import { useRouter } from "vue-router"
-import { useProductStore } from "@/stores/products"
-import type { ProductResponse } from "@/stores/products"
+import { useProductStore, type CategoryResponse, type ProductResponse } from "@/stores/products"
 import AppLayout from "@/layouts/AppLayout.vue"
 import ModalDialog from "@/components/ModalDialog.vue"
 import Button from "@/components/Button.vue"
@@ -15,17 +14,51 @@ type SortableKey = "id" | "name" | "priceEurCents" | "inventoryCount" | "isActiv
 const router = useRouter()
 const productStore = useProductStore()
 
+const DEFAULT_PER_PAGE = 16
+
 const products = ref<ProductResponse[]>([])
+const categories = ref<CategoryResponse[]>([])
+const totalProducts = ref(0)
+const currentStart = ref(0)
+const currentEnd = ref(DEFAULT_PER_PAGE)
 const isLoading = ref(false)
 const errorMessage = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 
+const selectedCategory = ref<string | null>(null)
 const searchQuery = ref("")
+const submittedSearch = ref("")
 const sortKey = ref<SortableKey | null>(null)
 const sortDirection = ref<"asc" | "desc">("asc")
 
 const productToDelete = ref<ProductResponse | null>(null)
 const isDeleteModalOpen = computed(() => productToDelete.value !== null)
+
+const hasNextPage = computed(() => currentEnd.value < totalProducts.value)
+const hasPrevPage = computed(() => currentStart.value > 0)
+
+const currentPage = computed(() => Math.floor(currentStart.value / DEFAULT_PER_PAGE) + 1)
+const totalPages = computed(() => Math.ceil(totalProducts.value / DEFAULT_PER_PAGE))
+
+const sortedProducts = computed(() => {
+    if (!sortKey.value) return products.value
+    const key = sortKey.value
+    const dir = sortDirection.value
+
+    return [...products.value].sort((a, b) => {
+        let valA: string | number | boolean = a[key]
+        let valB: string | number | boolean = b[key]
+
+        if (typeof valA === "string" && typeof valB === "string") {
+            valA = valA.toLowerCase()
+            valB = valB.toLowerCase()
+        }
+
+        if (valA < valB) return dir === "asc" ? -1 : 1
+        if (valA > valB) return dir === "asc" ? 1 : -1
+        return 0
+    })
+})
 
 function formatPrice(cents: number): string {
     return `€${(cents / 100).toFixed(2)}`
@@ -45,14 +78,45 @@ function successMessageToast(message: string) {
 
 async function loadProducts() {
     isLoading.value = true
-    
+
     try {
-        products.value = await productStore.adminListAllProducts()
+        const result = await productStore.adminListAllProducts(
+            currentStart.value,
+            currentEnd.value,
+            selectedCategory.value || undefined,
+            submittedSearch.value || undefined
+        )
+        products.value = result.products
+        totalProducts.value = result.totalProducts
     } catch (err) {
         errorMessageToast(err, "Failed to load products")
     } finally {
         isLoading.value = false
     }
+}
+
+async function loadCategories() {
+    try {
+        categories.value = await productStore.listCategories()
+    } catch {
+        console.error("Failed to load categories")
+    }
+}
+
+function searchProducts() {
+    submittedSearch.value = searchQuery.value.trim()
+    currentStart.value = 0
+    currentEnd.value = DEFAULT_PER_PAGE
+    loadProducts()
+}
+
+function selectCategory(slug: string | null) {
+    selectedCategory.value = slug
+    submittedSearch.value = ""
+    searchQuery.value = ""
+    currentStart.value = 0
+    currentEnd.value = DEFAULT_PER_PAGE
+    loadProducts()
 }
 
 function navigateToNew() {
@@ -78,15 +142,11 @@ async function confirmDelete() {
 
     try {
         await productStore.adminDeleteProduct(product.id)
-        products.value = products.value.filter(p => p.id !== product.id)
+        await loadProducts()
         successMessageToast(`Product "${product.name}" deleted`)
     } catch (err) {
         errorMessageToast(err, "Failed to delete product")
     }
-}
-
-function clearSearch() {
-    searchQuery.value = ""
 }
 
 function toggleSort(key: SortableKey) {
@@ -107,35 +167,21 @@ function getSortIndicator(key: SortableKey): string {
     return sortDirection.value === "asc" ? " ▲" : " ▼"
 }
 
-const filteredProducts = computed(() => {
-    if (!searchQuery.value.trim()) return products.value
-    const query = searchQuery.value.toLowerCase().trim()
-    return products.value.filter(
-        p =>
-            p.name.toLowerCase().includes(query) ||
-            p.slug.toLowerCase().includes(query),
-    )
-})
+function nextPage() {
+    if (hasNextPage.value) {
+        currentStart.value = currentEnd.value
+        currentEnd.value = Math.min(currentEnd.value + DEFAULT_PER_PAGE, totalProducts.value)
+        loadProducts()
+    }
+}
 
-const sortedProducts = computed(() => {
-    if (!sortKey.value) return filteredProducts.value
-    const key = sortKey.value
-    const dir = sortDirection.value
-
-    return [...filteredProducts.value].sort((a, b) => {
-        let valA: string | number | boolean = a[key]
-        let valB: string | number | boolean = b[key]
-
-        if (typeof valA === "string" && typeof valB === "string") {
-            valA = valA.toLowerCase()
-            valB = valB.toLowerCase()
-        }
-
-        if (valA < valB) return dir === "asc" ? -1 : 1
-        if (valA > valB) return dir === "asc" ? 1 : -1
-        return 0
-    })
-})
+function prevPage() {
+    if (hasPrevPage.value) {
+        currentEnd.value = currentStart.value
+        currentStart.value = Math.max(0, currentStart.value - DEFAULT_PER_PAGE)
+        loadProducts()
+    }
+}
 
 onMounted(() => {
     const toast = (history.state as Record<string, unknown>)?.toast
@@ -143,6 +189,7 @@ onMounted(() => {
         successMessageToast(toast)
     }
     loadProducts()
+    loadCategories()
 })
 </script>
 
@@ -158,32 +205,54 @@ onMounted(() => {
             <Toast v-if="successMessage" :message="successMessage" variant="success" @close="successMessage = null" />
             <Toast v-if="errorMessage" :message="errorMessage" variant="error" @close="errorMessage = null" />
 
-            <div v-if="isLoading" class="loading">Loading products</div>
-
-            <div v-else class="table-wrapper">
+            <div class="table-wrapper">
                 <div class="table-controls">
-                    <div class="search-box">
-                        <Input
-                            v-model="searchQuery"
-                            type="search"
-                            placeholder="Search by name or slug"
-                            min-width="240px"
-                        />
-                        <Button v-if="searchQuery" variant="ghost" @click="clearSearch">
-                            Clear
-                        </Button>
+                    <div class="filters-row">
+                        <div class="search-box">
+                            <Input
+                                v-model="searchQuery"
+                                type="search"
+                                placeholder="Search products"
+                                min-width="240px"
+                                @keyup.enter="searchProducts"
+                            />
+                            <Button variant="ghost" @click="searchProducts">
+                                Search
+                            </Button>
+                        </div>
+                        <div class="category-filters">
+                            <button
+                                :class="['category-btn', { active: selectedCategory === null }]"
+                                @click="selectCategory(null)"
+                            >
+                                All
+                            </button>
+                            <button
+                                v-for="cat in categories"
+                                :key="cat.id"
+                                :class="['category-btn', { active: selectedCategory === cat.slug }]"
+                                @click="selectCategory(cat.slug)"
+                            >
+                                {{ cat.name }}
+                            </button>
+                        </div>
                     </div>
                     <div class="controls-right">
                         <span class="results-count">
-                            {{ sortedProducts.length }}
-                            product{{ sortedProducts.length === 1 ? "" : "s" }}
-                            <span v-if="searchQuery">found</span>
+                            {{ totalProducts }}
+                            product{{ totalProducts === 1 ? "" : "s" }}
                         </span>
                         <Button variant="primary" @click="navigateToNew">New Product</Button>
                     </div>
                 </div>
 
-                <div class="table-container">
+                <div v-if="isLoading" class="loading">Loading products</div>
+
+                <div v-else-if="products.length === 0" class="empty-state">
+                    <p>No products found.</p>
+                </div>
+
+                <div v-else class="table-container">
                     <table class="products-table">
                         <thead>
                             <tr>
@@ -263,6 +332,26 @@ onMounted(() => {
                         </tbody>
                     </table>
                 </div>
+
+                <div v-if="products.length > 0" class="pagination">
+                    <Button
+                        variant="ghost"
+                        :disabled="!hasPrevPage"
+                        @click="prevPage"
+                    >
+                        Previous
+                    </Button>
+                    <span class="page-indicator">
+                        Page {{ currentPage }} of {{ totalPages }}
+                    </span>
+                    <Button
+                        variant="ghost"
+                        :disabled="!hasNextPage"
+                        @click="nextPage"
+                    >
+                        Next
+                    </Button>
+                </div>
             </div>
         </div>
 
@@ -322,16 +411,52 @@ onMounted(() => {
 
 .table-controls {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
     flex-wrap: wrap;
+}
+
+.filters-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .search-box {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+.category-filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.category-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 0;
+    padding: 4px 12px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.category-btn:hover {
+    border-color: var(--accent);
+    color: var(--text);
+}
+
+.category-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
 }
 
 .controls-right {
@@ -345,7 +470,8 @@ onMounted(() => {
     font-size: 14px;
 }
 
-.loading {
+.loading,
+.empty-state {
     padding: 40px;
     text-align: center;
     color: var(--muted);
@@ -475,6 +601,19 @@ onMounted(() => {
 .action-buttons {
     display: flex;
     gap: 8px;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0;
+}
+
+.page-indicator {
+    font-size: 14px;
+    color: var(--muted);
 }
 
 @media (max-width: 768px) {

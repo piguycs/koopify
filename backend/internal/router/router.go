@@ -57,7 +57,7 @@ func RegisterPrivateRoutes(
 
 	// Admin product routes (auth enforced per-handler)
 	// Note: public GET /products and GET /products/:slug live in the public router
-	private.GET("/products", productController.ListAllProducts)
+	private.GET("/products", productController.ListAllProductsPaginated)
 	private.GET("/products/:id", productController.GetProduct)
 	private.POST("/products", productController.CreateProduct)
 	private.PUT("/products/:id", productController.UpdateProduct)

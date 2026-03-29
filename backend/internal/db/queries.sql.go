@@ -84,6 +84,40 @@ func (q *Queries) CountActiveProductsByCategory(ctx context.Context, arg CountAc
 	return count, err
 }
 
+const countAllProducts = `-- name: CountAllProducts :one
+select count(*) from products
+where (coalesce($1, '') = '' or name ilike '%' || $1 || '%' or description ilike '%' || $1 || '%')
+`
+
+// Admin: Count all products (including inactive) with search
+func (q *Queries) CountAllProducts(ctx context.Context, dollar_1 interface{}) (int64, error) {
+	row := q.db.QueryRow(ctx, countAllProducts, dollar_1)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countAllProductsByCategory = `-- name: CountAllProductsByCategory :one
+select count(*)
+from products p
+join product_categories pc on p.id = pc.product_id
+where pc.category_id = $1
+  and (coalesce($2, '') = '' or p.name ilike '%' || $2 || '%' or p.description ilike '%' || $2 || '%')
+`
+
+type CountAllProductsByCategoryParams struct {
+	CategoryID int64
+	Column2    interface{}
+}
+
+// Admin: Count all products by category with search
+func (q *Queries) CountAllProductsByCategory(ctx context.Context, arg CountAllProductsByCategoryParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countAllProductsByCategory, arg.CategoryID, arg.Column2)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createCategory = `-- name: CreateCategory :one
 insert into categories (name, slug)
 values ($1, $2)
@@ -434,6 +468,133 @@ from products order by created_at desc
 
 func (q *Queries) ListAllProducts(ctx context.Context) ([]Product, error) {
 	rows, err := q.db.Query(ctx, listAllProducts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Product
+	for rows.Next() {
+		var i Product
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Slug,
+			&i.Description,
+			&i.ImageUrl,
+			&i.PriceEurCents,
+			&i.DiscountPercent,
+			&i.InventoryCount,
+			&i.InStock,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAllProductsPaginated = `-- name: ListAllProductsPaginated :many
+select id,
+	name,
+	slug,
+	description,
+	image_url,
+	price_eur_cents,
+	discount_percent,
+	inventory_count,
+	in_stock,
+	is_active,
+	created_at,
+	updated_at
+from products
+where (coalesce($3, '') = '' or name ilike '%' || $3 || '%' or description ilike '%' || $3 || '%')
+order by created_at desc
+limit $1 offset $2
+`
+
+type ListAllProductsPaginatedParams struct {
+	Limit   int32
+	Offset  int32
+	Column3 interface{}
+}
+
+// Admin: List all products (including inactive) with pagination and search
+func (q *Queries) ListAllProductsPaginated(ctx context.Context, arg ListAllProductsPaginatedParams) ([]Product, error) {
+	rows, err := q.db.Query(ctx, listAllProductsPaginated, arg.Limit, arg.Offset, arg.Column3)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Product
+	for rows.Next() {
+		var i Product
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Slug,
+			&i.Description,
+			&i.ImageUrl,
+			&i.PriceEurCents,
+			&i.DiscountPercent,
+			&i.InventoryCount,
+			&i.InStock,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAllProductsPaginatedByCategory = `-- name: ListAllProductsPaginatedByCategory :many
+select
+	p.id,
+	p.name,
+	p.slug,
+	p.description,
+	p.image_url,
+	p.price_eur_cents,
+	p.discount_percent,
+	p.inventory_count,
+	p.in_stock,
+	p.is_active,
+	p.created_at,
+	p.updated_at
+from products p
+join product_categories pc on p.id = pc.product_id
+where pc.category_id = $1
+  and (coalesce($4, '') = '' or p.name ilike '%' || $4 || '%' or p.description ilike '%' || $4 || '%')
+order by p.created_at desc
+limit $2 offset $3
+`
+
+type ListAllProductsPaginatedByCategoryParams struct {
+	CategoryID int64
+	Limit      int32
+	Offset     int32
+	Column4    interface{}
+}
+
+// Admin: List all products by category with pagination and search
+func (q *Queries) ListAllProductsPaginatedByCategory(ctx context.Context, arg ListAllProductsPaginatedByCategoryParams) ([]Product, error) {
+	rows, err := q.db.Query(ctx, listAllProductsPaginatedByCategory,
+		arg.CategoryID,
+		arg.Limit,
+		arg.Offset,
+		arg.Column4,
+	)
 	if err != nil {
 		return nil, err
 	}
