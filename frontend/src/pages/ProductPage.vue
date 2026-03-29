@@ -67,6 +67,21 @@ function decrementQuantity() {
     }
 }
 
+// attempting to make functions pure, after writhing 10000 lines of code with impure functions
+// not using a strict language gave me the freedom which I only now realise I actually hate
+function isInStock(product: ProductResponse): boolean {
+    return product.inStock && product.inventoryCount > 0
+}
+
+function inventoryCount(product: ProductResponse): number {
+    if (!product.inStock) return 0
+    return product.inventoryCount
+}
+
+function showBtnSection(product: ProductResponse): boolean {
+    return (authStore.currentUser?.admin && !isInStock(product)) || isInStock(product)
+}
+
 onMounted(() => {
     loadProduct()
 })
@@ -131,16 +146,16 @@ onMounted(() => {
 
                 <div class="stock-status">
                     <span
-                        :class="['stock-indicator', product.inStock ? 'in-stock' : 'out-of-stock']"
+                        :class="['stock-indicator', isInStock(product) ? 'in-stock' : 'out-of-stock']"
                     ></span>
-                    {{ product.inStock ? "In Stock" : "Out of Stock" }}
+                    {{ isInStock(product) ? "In Stock" : "Out of Stock" }}
                     <span v-if="product.inStock" class="stock-count">
-                        ({{ product.inventoryCount }} available)
+                        ({{ inventoryCount(product) }} available)
                     </span>
                 </div>
 
-                <div v-if="product.inStock" class="add-to-cart-section">
-                    <div class="quantity-selector">
+                <div class="add-to-cart-section" v-if="showBtnSection(product)">
+                    <div v-if="isInStock(product)" class="quantity-selector">
                         <button
                             class="qty-btn"
                             @click="decrementQuantity"
@@ -158,7 +173,7 @@ onMounted(() => {
                         </button>
                     </div>
 
-                    <Button variant="primary" @click="addToCart"> Add to Cart </Button>
+                    <Button v-if="isInStock(product)" variant="primary" @click="addToCart"> Add to Cart </Button>
                     <Button
                         v-if="authStore.currentUser?.admin"
                         variant="ghost"
