@@ -273,5 +273,21 @@ export const useAuthStore = defineStore("auth", {
                 authToken: this.token,
             })
         },
+
+        async updateOrderAdyenSession(
+            orderId: number,
+            sessionId: string,
+            sessionResult: string,
+        ): Promise<OrderResponse> {
+            if (!this.token) {
+                throw new ApiError("Not authenticated", 401)
+            }
+
+            return await apiClient.patch<OrderResponse>(
+                `/api/v1/orders/${orderId}/adyen-session`,
+                { sessionId, sessionResult },
+                { authToken: this.token },
+            )
+        },
     },
 })
