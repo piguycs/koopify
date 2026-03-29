@@ -104,3 +104,43 @@ func (cc *CheckoutController) ListAllOrders(ctx *echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, orders)
 }
+
+func (cc *CheckoutController) UpdateOrderAdyenSession(ctx *echo.Context) error {
+	userID, err := auth.UserIDFromToken(ctx)
+	if err != nil {
+		return ctx.JSON(http.StatusUnauthorized, response.NewError("unauthorized", err.Error()))
+	}
+
+	orderID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, response.NewError("invalid_request", "invalid order id"))
+	}
+
+	req, err := internal.BindAndValidate[UpdateAdyenSessionRequest](ctx)
+	if err != nil {
+		return err
+	}
+
+	order, err := cc.service.GetOrder(ctx.Request().Context(), userID, orderID)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrOrderNotFound):
+			return ctx.JSON(http.StatusNotFound, response.NewError("order_not_found", err.Error()))
+		default:
+			log.Errorf("Error fetching order %d: %s", orderID, err.Error())
+			return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to fetch order"))
+		}
+	}
+
+	if order.UserID != userID {
+		return ctx.JSON(http.StatusForbidden, response.NewError("forbidden", "you do not own this order"))
+	}
+
+	updatedOrder, err := cc.service.UpdateOrderAdyenSession(ctx.Request().Context(), orderID, req.SessionId, req.SessionResult)
+	if err != nil {
+		log.Errorf("Error updating adyen session for order %d: %s", orderID, err.Error())
+		return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to update order"))
+	}
+
+	return ctx.JSON(http.StatusOK, updatedOrder)
+}

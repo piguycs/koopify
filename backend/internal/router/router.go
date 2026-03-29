@@ -68,6 +68,7 @@ func RegisterPrivateRoutes(
 	private.POST("/checkout/sessions", checkoutController.CreateCheckoutSession)
 	private.GET("/orders", checkoutController.ListOrders)
 	private.GET("/orders/:id", checkoutController.GetOrder)
+	private.PATCH("/orders/:id/adyen-session", checkoutController.UpdateOrderAdyenSession)
 
 	// Admin order routes (admin check enforced in handler)
 	private.GET("/admin/orders", checkoutController.ListAllOrders)

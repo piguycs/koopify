@@ -195,6 +195,21 @@ func (s *CheckoutService) UpdateOrderStatus(ctx context.Context, orderID int64, 
 	return &resp, nil
 }
 
+func (s *CheckoutService) UpdateOrderAdyenSession(ctx context.Context, orderID int64, sessionId string, sessionResult string) (*OrderResponse, error) {
+	order, err := s.repo.UpdateOrderAdyenSession(ctx, orderID, sessionId, sessionResult)
+	if err != nil {
+		return nil, err
+	}
+
+	items, err := s.repo.ListOrderItems(ctx, orderID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch order items: %w", err)
+	}
+
+	resp := orderResponseFrom(*order, items)
+	return &resp, nil
+}
+
 func (s *CheckoutService) pollPendingOrders(
 	ctx context.Context,
 	sessionId, sessionResult string,
@@ -222,6 +237,8 @@ func (s *CheckoutService) createAdyenSession(ctx context.Context, orderID int64,
 		Value:    int64(amount),
 	}
 
+	returnUrl := fmt.Sprintf("%s?orderId=%d", s.returnUrl, orderID)
+
 	createCheckoutSessionRequest := adyen_checkout.CreateCheckoutSessionRequest{
 		Reference:       fmt.Sprintf("order_%d", orderID),
 		Mode:            common.PtrString("hosted"),
@@ -229,7 +246,7 @@ func (s *CheckoutService) createAdyenSession(ctx context.Context, orderID int64,
 		MerchantAccount: s.merchantAccount,
 		CountryCode:     common.PtrString("NL"),
 		ThemeId:         common.PtrString(s.themeId),
-		ReturnUrl:       s.returnUrl,
+		ReturnUrl:       returnUrl,
 	}
 
 	req := service.PaymentsApi.

@@ -24,14 +24,20 @@ type OrderItemResponse struct {
 }
 
 type OrderResponse struct {
-	ID             int64               `json:"id"`
-	UserID         int64               `json:"userId"`
-	Status         string              `json:"status"`
-	TotalEurCents  int32               `json:"totalEurCents"`
-	AdyenReference *string             `json:"adyenReference"`
-	CreatedAt      time.Time           `json:"createdAt"`
-	UpdatedAt      time.Time           `json:"updatedAt"`
-	Items          []OrderItemResponse `json:"items"`
+	ID                 int64               `json:"id"`
+	UserID             int64               `json:"userId"`
+	Status             string              `json:"status"`
+	TotalEurCents      int32               `json:"totalEurCents"`
+	AdyenReference     *string             `json:"adyenReference"`
+	AdyenSessionResult *string             `json:"adyenSessionResult"`
+	CreatedAt          time.Time           `json:"createdAt"`
+	UpdatedAt          time.Time           `json:"updatedAt"`
+	Items              []OrderItemResponse `json:"items"`
+}
+
+type UpdateAdyenSessionRequest struct {
+	SessionId     string `json:"sessionId" validate:"required"`
+	SessionResult string `json:"sessionResult" validate:"required"`
 }
 
 type CheckoutSessionResponse struct {
@@ -60,14 +66,20 @@ func orderResponseFrom(order db.Order, items []db.OrderItem) OrderResponse {
 		adyenRef = &order.AdyenReference.String
 	}
 
+	var adyenSessionResult *string
+	if order.AdyenSessionResult.Valid {
+		adyenSessionResult = &order.AdyenSessionResult.String
+	}
+
 	return OrderResponse{
-		ID:             order.ID,
-		UserID:         order.UserID,
-		Status:         order.Status,
-		TotalEurCents:  order.TotalEurCents,
-		AdyenReference: adyenRef,
-		CreatedAt:      order.CreatedAt.Time,
-		UpdatedAt:      order.UpdatedAt.Time,
-		Items:          itemResponses,
+		ID:                 order.ID,
+		UserID:             order.UserID,
+		Status:             order.Status,
+		TotalEurCents:      order.TotalEurCents,
+		AdyenReference:     adyenRef,
+		AdyenSessionResult: adyenSessionResult,
+		CreatedAt:          order.CreatedAt.Time,
+		UpdatedAt:          order.UpdatedAt.Time,
+		Items:              itemResponses,
 	}
 }
