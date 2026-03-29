@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router"
 import { useAuthStore } from "@/stores/auth"
 import HomePage from "@/pages/HomePage.vue"
 import CataloguePage from "@/pages/CataloguePage.vue"
+import ProductPage from "@/pages/ProductPage.vue"
 import SignInPage from "@/pages/SignInPage.vue"
 import SignUpPage from "@/pages/SignUpPage.vue"
 import AccountPage from "@/pages/AccountPage.vue"
@@ -16,6 +17,7 @@ const router = createRouter({
     history: createWebHistory(),
     routes: [
         { path: "/", name: "home", component: HomePage },
+        { path: "/product/:slug", name: "product", component: ProductPage },
         { path: "/catalogue", name: "catalogue", component: CataloguePage },
 
         { path: "/sign-in", name: "sign-in", component: SignInPage },

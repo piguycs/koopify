@@ -44,6 +44,13 @@ export type CreateCategoryPayload = {
     slug: string
 }
 
+export type ProductResponsePage = {
+    start: number
+    end: number
+    totalProducts: number
+    products: ProductResponse[]
+}
+
 function authToken(): string {
     return useAuthStore().token
 }
@@ -55,9 +62,12 @@ function authToken(): string {
 export const useProductStore = defineStore("products", {
     actions: {
         // Public
-        async listActiveProducts(categorySlug?: string): Promise<ProductResponse[]> {
-            const query = categorySlug ? `?category=${encodeURIComponent(categorySlug)}` : ""
-            return apiClient.get<ProductResponse[]>(`/public_api/v1/products${query}`)
+        async listActiveProducts(start: number, end: number, categorySlug?: string): Promise<ProductResponsePage> {
+            let query = `start=${start}&end=${end}`
+            if (categorySlug) {
+                query += `&category=${encodeURIComponent(categorySlug)}`
+            }
+            return apiClient.get<ProductResponsePage>(`/public_api/v1/products?${query}`)
         },
 
         async getProductBySlug(slug: string): Promise<ProductResponse> {
