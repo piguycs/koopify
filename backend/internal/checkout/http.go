@@ -144,3 +144,27 @@ func (cc *CheckoutController) UpdateOrderAdyenSession(ctx *echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, updatedOrder)
 }
+
+func (cc *CheckoutController) PollOrder(ctx *echo.Context) error {
+	if !auth.IsAdminFromToken(ctx) {
+		return ctx.JSON(http.StatusForbidden, response.NewError("forbidden", "admin access required"))
+	}
+
+	orderID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		return ctx.JSON(http.StatusBadRequest, response.NewError("invalid_request", "invalid order id"))
+	}
+
+	order, err := cc.service.PollOrder(ctx.Request().Context(), orderID)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrOrderNotFound):
+			return ctx.JSON(http.StatusNotFound, response.NewError("order_not_found", err.Error()))
+		default:
+			log.Errorf("Error polling order %d: %s", orderID, err.Error())
+			return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to poll order: "+err.Error()))
+		}
+	}
+
+	return ctx.JSON(http.StatusOK, order)
+}

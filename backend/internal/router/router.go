@@ -72,4 +72,5 @@ func RegisterPrivateRoutes(
 
 	// Admin order routes (admin check enforced in handler)
 	private.GET("/admin/orders", checkoutController.ListAllOrders)
+	private.POST("/admin/orders/:id/poll", checkoutController.PollOrder)
 }

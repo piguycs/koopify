@@ -289,5 +289,17 @@ export const useAuthStore = defineStore("auth", {
                 { authToken: this.token },
             )
         },
+
+        async pollOrder(orderId: number): Promise<OrderResponse> {
+            if (!this.token) {
+                throw new ApiError("Not authenticated", 401)
+            }
+
+            return await apiClient.post<OrderResponse>(
+                `/api/v1/admin/orders/${orderId}/poll`,
+                undefined,
+                { authToken: this.token }
+            )
+        },
     },
 })

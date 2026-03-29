@@ -201,6 +201,55 @@ func (s *CheckoutService) UpdateOrderAdyenSession(ctx context.Context, orderID i
 		return nil, err
 	}
 
+	status, err := s.pollPendingOrders(ctx, sessionId, sessionResult)
+	if err != nil {
+		log.Warnf("Failed to poll order %d: %v", orderID, err)
+	} else if status != nil && *status == "completed" {
+		order, err = s.repo.UpdateOrderStatus(ctx, orderID, "completed")
+		if err != nil {
+			log.Warnf("Failed to update order %d status to completed: %v", orderID, err)
+		}
+	}
+
+	items, err := s.repo.ListOrderItems(ctx, orderID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch order items: %w", err)
+	}
+
+	resp := orderResponseFrom(*order, items)
+	return &resp, nil
+}
+
+func (s *CheckoutService) PollOrder(ctx context.Context, orderID int64) (*OrderResponse, error) {
+	order, err := s.repo.GetOrder(ctx, orderID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !order.AdyenReference.Valid || !order.AdyenSessionResult.Valid {
+		return nil, fmt.Errorf("order does not have Adyen session information")
+	}
+
+	sessionId := order.AdyenReference.String
+	sessionResult := order.AdyenSessionResult.String
+
+	status, err := s.pollPendingOrders(ctx, sessionId, sessionResult)
+	if err != nil {
+		return nil, fmt.Errorf("failed to poll Adyen: %w", err)
+	}
+
+	if status != nil && *status == "completed" {
+		order, err = s.repo.UpdateOrderStatus(ctx, orderID, "completed")
+		if err != nil {
+			return nil, fmt.Errorf("failed to update order status: %w", err)
+		}
+	} else {
+		order, err = s.repo.UpdateOrderStatus(ctx, orderID, "pending")
+		if err != nil {
+			return nil, fmt.Errorf("failed to update order status: %w", err)
+		}
+	}
+
 	items, err := s.repo.ListOrderItems(ctx, orderID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch order items: %w", err)

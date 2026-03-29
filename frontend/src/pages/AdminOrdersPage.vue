@@ -9,6 +9,7 @@ const authStore = useAuthStore()
 
 const orders = ref<OrderResponse[]>([])
 const isLoading = ref(false)
+const pollingOrderId = ref<number | null>(null)
 const errorMessage = ref("")
 
 const expandedOrderId = ref<number | null>(null)
@@ -52,6 +53,26 @@ async function loadOrders() {
         }
     } finally {
         isLoading.value = false
+    }
+}
+
+async function refreshOrderStatus(orderId: number) {
+    if (pollingOrderId.value === orderId) return
+    pollingOrderId.value = orderId
+    try {
+        const updatedOrder = await authStore.pollOrder(orderId)
+        const index = orders.value.findIndex((o) => o.id === orderId)
+        if (index !== -1) {
+            orders.value[index] = updatedOrder
+        }
+    } catch (err) {
+        if (err instanceof ApiError) {
+            errorMessage.value = err.message
+        } else {
+            errorMessage.value = "Failed to refresh order status"
+        }
+    } finally {
+        pollingOrderId.value = null
     }
 }
 
@@ -104,9 +125,20 @@ onMounted(() => {
                                 <td class="col-id">#{{ order.id }}</td>
                                 <td class="col-user">{{ order.userId }}</td>
                                 <td class="col-status">
-                                    <span :class="['status-badge', order.status]">
-                                        {{ formatStatus(order.status) }}
-                                    </span>
+                                    <div class="status-cell">
+                                        <span :class="['status-badge', order.status]">
+                                            {{ formatStatus(order.status) }}
+                                        </span>
+                                        <button
+                                            class="refresh-btn"
+                                            :disabled="pollingOrderId === order.id"
+                                            :title="'Refresh status'"
+                                            @click.stop="refreshOrderStatus(order.id)"
+                                        >
+                                            <span v-if="pollingOrderId === order.id">...</span>
+                                            <span v-else>↻</span>
+                                        </button>
+                                    </div>
                                 </td>
                                 <td class="col-total">{{ formatPrice(order.totalEurCents) }}</td>
                                 <td class="col-date">{{ formatDate(order.createdAt) }}</td>
@@ -256,6 +288,34 @@ onMounted(() => {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border-radius: 2px;
+}
+
+.status-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.refresh-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1;
+    transition: all 0.15s ease;
+}
+
+.refresh-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .status-badge.pending {
