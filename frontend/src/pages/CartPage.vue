@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import { RouterLink } from "vue-router"
+import { ref } from "vue"
+import { RouterLink, useRouter } from "vue-router"
 import AppLayout from "@/layouts/AppLayout.vue"
 import Button from "@/components/Button.vue"
 import { useCartStore } from "@/stores/cart"
-import router from "@/router"
+import { useAuthStore } from "@/stores/auth"
+import { ApiError } from "@/api/client"
 
 const cartStore = useCartStore()
+const authStore = useAuthStore()
+const router = useRouter()
+
+const isCheckingOut = ref(false)
+const errorMessage = ref("")
 
 function formatPrice(cents: number): string {
     return `€${(cents / 100).toFixed(2)}`
@@ -32,8 +39,35 @@ function gotoCatalogue() {
     router.push({ name: "catalogue" })
 }
 
-function handleCheckout() {
-    alert("Checkout not yet implemented - backend integration pending")
+async function handleCheckout() {
+    if (isCheckingOut.value) return
+
+    if (!authStore.isAuthenticated) {
+        router.push({ name: "sign-in", query: { redirect: "/cart" } })
+        return
+    }
+
+    isCheckingOut.value = true
+    errorMessage.value = ""
+
+    try {
+        const items = cartStore.items.map(item => ({
+            productId: item.id,
+            quantity: item.quantity,
+        }))
+
+        const session = await authStore.createCheckoutSession(items)
+        cartStore.clearCart()
+        window.location.href = session.adyenCheckoutUrl
+    } catch (err) {
+        if (err instanceof ApiError) {
+            errorMessage.value = err.message
+        } else {
+            errorMessage.value = "Checkout failed. Please try again."
+        }
+    } finally {
+        isCheckingOut.value = false
+    }
 }
 </script>
 
@@ -113,8 +147,11 @@ function handleCheckout() {
 
             <aside class="cart-summary">
                 <h2>Order Total: {{ formatPrice(cartStore.totalPrice) }}</h2>
+                <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
                 <div class="summary-actions">
-                    <Button variant="primary" @click="handleCheckout"> Proceed to Checkout </Button>
+                    <Button variant="primary" :loading="isCheckingOut" @click="handleCheckout">
+                        Proceed to Checkout
+                    </Button>
                     <Button variant="ghost" @click="gotoCatalogue">Continue Shopping</Button>
                     <Button variant="link" @click="cartStore.clearCart"> Clear Cart </Button>
                 </div>
@@ -306,6 +343,15 @@ function handleCheckout() {
 
 .summary-actions a {
     text-decoration: none;
+}
+
+.error-message {
+    color: #f38b8b;
+    font-size: 14px;
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    background: rgba(243, 139, 139, 0.1);
+    border: 1px solid rgba(243, 139, 139, 0.3);
 }
 
 @media (max-width: 800px) {

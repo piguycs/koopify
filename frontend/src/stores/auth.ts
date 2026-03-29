@@ -19,6 +19,35 @@ export type UpdateUserPayload = {
     email?: string
 }
 
+export type OrderItemResponse = {
+    id: number
+    productId: number
+    productName: string
+    quantity: number
+    unitPriceCents: number
+}
+
+export type OrderResponse = {
+    id: number
+    userId: number
+    status: string
+    totalEurCents: number
+    adyenReference: string | null
+    createdAt: string
+    updatedAt: string
+    items: OrderItemResponse[]
+}
+
+export type CheckoutSessionResponse = {
+    order: OrderResponse
+    adyenCheckoutUrl: string
+}
+
+export type CartItemRequest = {
+    productId: number
+    quantity: number
+}
+
 const TOKEN_KEY = "koopify_token"
 
 export const useAuthStore = defineStore("auth", {
@@ -211,6 +240,18 @@ export const useAuthStore = defineStore("auth", {
             return await apiClient.patch<UserResponse>(`/api/v1/users/${id}`, update, {
                 authToken: this.token,
             })
+        },
+
+        async createCheckoutSession(items: CartItemRequest[]): Promise<CheckoutSessionResponse> {
+            if (!this.token) {
+                throw new ApiError("Not authenticated", 401)
+            }
+
+            return await apiClient.post<CheckoutSessionResponse>(
+                "/api/v1/checkout/sessions",
+                { items },
+                { authToken: this.token },
+            )
         },
     },
 })
