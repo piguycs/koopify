@@ -129,45 +129,6 @@ func (s *CheckoutService) CreateCheckoutSession(
 	}, nil
 }
 
-func (s *CheckoutService) createAdyenSession(ctx context.Context, orderID int64, amount int32) (string, error) {
-	service := s.adyenClient.Checkout()
-
-	amountEur := adyen_checkout.Amount{
-		Currency: "EUR",
-		Value:    int64(amount),
-	}
-
-	createCheckoutSessionRequest := adyen_checkout.CreateCheckoutSessionRequest{
-		Reference:       fmt.Sprintf("order_%d", orderID),
-		Mode:            common.PtrString("hosted"),
-		Amount:          amountEur,
-		MerchantAccount: s.merchantAccount,
-		CountryCode:     common.PtrString("NL"),
-		ThemeId:         common.PtrString(s.themeId),
-		ReturnUrl:       s.returnUrl,
-	}
-
-	req := service.PaymentsApi.
-		SessionsInput().
-		IdempotencyKey(uuid.New().String()).
-		CreateCheckoutSessionRequest(createCheckoutSessionRequest)
-
-	res, httpRes, err := service.PaymentsApi.Sessions(ctx, req)
-	_ = httpRes
-
-	if err != nil {
-		log.Error("Could not complete adyen request", "error", err)
-		return "", ErrCheckoutCreationFailed
-	}
-
-	if res.Url == nil || *res.Url == "" {
-		log.Error("adyen's response url was empty")
-		return "", ErrCheckoutCreationFailed
-	}
-
-	return *res.Url, nil
-}
-
 func (s *CheckoutService) GetOrder(ctx context.Context, userID int64, orderID int64) (*OrderResponse, error) {
 	order, err := s.repo.GetOrderByUser(ctx, orderID, userID)
 	if err != nil {
@@ -232,4 +193,62 @@ func (s *CheckoutService) UpdateOrderStatus(ctx context.Context, orderID int64, 
 
 	resp := orderResponseFrom(*order, items)
 	return &resp, nil
+}
+
+func (s *CheckoutService) pollPendingOrders(
+	ctx context.Context,
+	sessionId, sessionResult string,
+) (*string, error) {
+	service := s.adyenClient.Checkout()
+	req := service.PaymentsApi.GetResultOfPaymentSessionInput(sessionId).SessionResult(sessionResult)
+
+	res, httpRes, err := service.PaymentsApi.GetResultOfPaymentSession(ctx, req)
+	_ = httpRes
+
+	if err != nil {
+		return nil, err
+	}
+
+	// log.Info("AND THE RESULT IS", "id", *res.Id, "status", *res.Status, "err", err)
+
+	return res.Status, nil
+}
+
+func (s *CheckoutService) createAdyenSession(ctx context.Context, orderID int64, amount int32) (string, error) {
+	service := s.adyenClient.Checkout()
+
+	amountEur := adyen_checkout.Amount{
+		Currency: "EUR",
+		Value:    int64(amount),
+	}
+
+	createCheckoutSessionRequest := adyen_checkout.CreateCheckoutSessionRequest{
+		Reference:       fmt.Sprintf("order_%d", orderID),
+		Mode:            common.PtrString("hosted"),
+		Amount:          amountEur,
+		MerchantAccount: s.merchantAccount,
+		CountryCode:     common.PtrString("NL"),
+		ThemeId:         common.PtrString(s.themeId),
+		ReturnUrl:       s.returnUrl,
+	}
+
+	req := service.PaymentsApi.
+		SessionsInput().
+		IdempotencyKey(uuid.New().String()).
+		CreateCheckoutSessionRequest(createCheckoutSessionRequest)
+
+	res, httpRes, err := service.PaymentsApi.Sessions(ctx, req)
+	_ = httpRes
+
+	if err != nil {
+		log.Error("Could not complete adyen request", "error", err)
+		return "", ErrCheckoutCreationFailed
+	}
+
+	if res.Url == nil || *res.Url == "" {
+		log.Error("adyen's response url was empty")
+		return "", ErrCheckoutCreationFailed
+	}
+
+	return *res.Url, nil
 }
