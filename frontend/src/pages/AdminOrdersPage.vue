@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue"
+import { ref, onMounted } from "vue"
 import { useAuthStore, type OrderResponse } from "@/stores/auth"
 import AppLayout from "@/layouts/AppLayout.vue"
 import Toast from "@/components/Toast.vue"
@@ -46,8 +46,12 @@ async function loadOrders() {
     try {
         orders.value = await authStore.listAllOrders()
     } catch (err) {
-        if (err instanceof ApiError) {
-            errorMessage.value = err.message
+        // no content, means not really an error
+        if (err instanceof ApiError && err.status == 204) {
+            // we dont set any message actually, not an error condition
+            // errorMessage.value = err.message
+        } else if (err instanceof ApiError) {
+            errorMessage.value = JSON.stringify(err)
         } else {
             errorMessage.value = "Failed to load orders"
         }

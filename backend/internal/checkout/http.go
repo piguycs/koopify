@@ -162,7 +162,7 @@ func (cc *CheckoutController) PollOrder(ctx *echo.Context) error {
 			return ctx.JSON(http.StatusNotFound, response.NewError("order_not_found", err.Error()))
 		default:
 			log.Errorf("Error polling order %d: %s", orderID, err.Error())
-			return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to poll order: "+err.Error()))
+			return ctx.JSON(http.StatusNoContent, response.NewError("no_content", "No Content"))
 		}
 	}
 
