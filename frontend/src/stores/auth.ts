@@ -253,5 +253,25 @@ export const useAuthStore = defineStore("auth", {
                 { authToken: this.token },
             )
         },
+
+        async listOrders(): Promise<OrderResponse[]> {
+            if (!this.token) {
+                throw new ApiError("Not authenticated", 401)
+            }
+
+            return await apiClient.get<OrderResponse[]>("/api/v1/orders", {
+                authToken: this.token,
+            })
+        },
+
+        async listAllOrders(): Promise<OrderResponse[]> {
+            if (!this.token) {
+                throw new ApiError("Not authenticated", 401)
+            }
+
+            return await apiClient.get<OrderResponse[]>("/api/v1/admin/orders", {
+                authToken: this.token,
+            })
+        },
     },
 })

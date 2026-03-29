@@ -11,6 +11,7 @@ import ForbiddenPage from "@/pages/ForbiddenPage.vue"
 import AdminProductsPage from "@/pages/AdminProductsPage.vue"
 import AdminProductEditPage from "@/pages/AdminProductEditPage.vue"
 import AdminUsersPage from "@/pages/AdminUsersPage.vue"
+import AdminOrdersPage from "@/pages/AdminOrdersPage.vue"
 import CheckoutComplete from "@/pages/CheckoutComplete.vue"
 import CartPage from "@/pages/CartPage.vue"
 
@@ -58,6 +59,12 @@ const router = createRouter({
             path: "/admin/users",
             name: "admin-users",
             component: AdminUsersPage,
+            meta: { requiresAuth: true, requiresAdmin: true },
+        },
+        {
+            path: "/admin/orders",
+            name: "admin-orders",
+            component: AdminOrdersPage,
             meta: { requiresAuth: true, requiresAdmin: true },
         },
 

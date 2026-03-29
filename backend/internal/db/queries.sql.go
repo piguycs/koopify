@@ -643,6 +643,40 @@ func (q *Queries) GetUserWithEmail(ctx context.Context, email string) (User, err
 	return i, err
 }
 
+const listAllOrders = `-- name: ListAllOrders :many
+select id, user_id, status, total_eur_cents, adyen_reference, created_at, updated_at
+from orders order by created_at desc
+`
+
+// Admin: List all orders
+func (q *Queries) ListAllOrders(ctx context.Context) ([]Order, error) {
+	rows, err := q.db.Query(ctx, listAllOrders)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Order
+	for rows.Next() {
+		var i Order
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Status,
+			&i.TotalEurCents,
+			&i.AdyenReference,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAllProducts = `-- name: ListAllProducts :many
 select
 	id,

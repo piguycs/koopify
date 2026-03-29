@@ -319,6 +319,11 @@ from orders where id = $1 and user_id = $2 limit 1;
 select id, user_id, status, total_eur_cents, adyen_reference, created_at, updated_at
 from orders where user_id = $1 order by created_at desc;
 
+-- Admin: List all orders
+-- name: ListAllOrders :many
+select id, user_id, status, total_eur_cents, adyen_reference, created_at, updated_at
+from orders order by created_at desc;
+
 -- name: UpdateOrderStatus :one
 update orders set status = $2, updated_at = now()
 where id = $1

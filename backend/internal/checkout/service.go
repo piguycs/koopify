@@ -201,6 +201,24 @@ func (s *CheckoutService) ListOrders(ctx context.Context, userID int64) ([]Order
 	return responses, nil
 }
 
+func (s *CheckoutService) ListAllOrders(ctx context.Context) ([]OrderResponse, error) {
+	orders, err := s.repo.ListAllOrders(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	responses := make([]OrderResponse, len(orders))
+	for i, order := range orders {
+		items, err := s.repo.ListOrderItems(ctx, order.ID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch order items for order %d: %w", order.ID, err)
+		}
+		responses[i] = orderResponseFrom(order, items)
+	}
+
+	return responses, nil
+}
+
 func (s *CheckoutService) UpdateOrderStatus(ctx context.Context, orderID int64, status string) (*OrderResponse, error) {
 	order, err := s.repo.UpdateOrderStatus(ctx, orderID, status)
 	if err != nil {

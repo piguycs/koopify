@@ -17,6 +17,7 @@ type CheckoutRepository interface {
 	GetOrderByUser(ctx context.Context, orderID int64, userID int64) (*db.Order, error)
 	ListOrderItems(ctx context.Context, orderID int64) ([]db.OrderItem, error)
 	ListOrdersByUser(ctx context.Context, userID int64) ([]db.Order, error)
+	ListAllOrders(ctx context.Context) ([]db.Order, error)
 	UpdateOrderStatus(ctx context.Context, orderID int64, status string) (*db.Order, error)
 	UpdateOrderAdyenReference(ctx context.Context, orderID int64, adyenRef string) (*db.Order, error)
 	DecrementProductInventory(ctx context.Context, productID int64, quantity int32) (*db.Product, error)
@@ -92,6 +93,14 @@ func (r PGCheckoutRepository) ListOrderItems(ctx context.Context, orderID int64)
 
 func (r PGCheckoutRepository) ListOrdersByUser(ctx context.Context, userID int64) ([]db.Order, error) {
 	orders, err := r.queries.ListOrdersByUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+
+func (r PGCheckoutRepository) ListAllOrders(ctx context.Context) ([]db.Order, error) {
+	orders, err := r.queries.ListAllOrders(ctx)
 	if err != nil {
 		return nil, err
 	}

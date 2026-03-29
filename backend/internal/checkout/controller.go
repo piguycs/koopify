@@ -90,3 +90,17 @@ func (cc *CheckoutController) ListOrders(ctx *echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, orders)
 }
+
+func (cc *CheckoutController) ListAllOrders(ctx *echo.Context) error {
+	if !auth.IsAdminFromToken(ctx) {
+		return ctx.JSON(http.StatusForbidden, response.NewError("forbidden", "admin access required"))
+	}
+
+	orders, err := cc.service.ListAllOrders(ctx.Request().Context())
+	if err != nil {
+		log.Errorf("Error listing all orders: %s", err.Error())
+		return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to list orders"))
+	}
+
+	return ctx.JSON(http.StatusOK, orders)
+}
