@@ -12,6 +12,7 @@ import AdminProductsPage from "@/pages/AdminProductsPage.vue"
 import AdminProductEditPage from "@/pages/AdminProductEditPage.vue"
 import AdminUsersPage from "@/pages/AdminUsersPage.vue"
 import CheckoutComplete from "@/pages/CheckoutComplete.vue"
+import CartPage from "@/pages/CartPage.vue"
 
 const router = createRouter({
     history: createWebHistory(),
@@ -30,8 +31,10 @@ const router = createRouter({
             path: "/checkout-complete",
             name: "checkout-complete",
             component: CheckoutComplete,
-            meta: { requiresAuth: true }
+            meta: { requiresAuth: true },
         },
+
+        { path: "/cart", name: "cart", component: CartPage },
 
         {
             path: "/admin/products",

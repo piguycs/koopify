@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { onMounted } from "vue"
 import { RouterLink, useRouter } from "vue-router"
-import { useAppStore } from "@/stores/app"
 import { useAuthStore } from "@/stores/auth"
+import { useCartStore } from "@/stores/cart"
 import Button from "@/components/Button.vue"
 
-const appStore = useAppStore()
 const authStore = useAuthStore()
+const cartStore = useCartStore()
 const router = useRouter()
 
 const handleSignOut = () => {
@@ -47,7 +47,11 @@ onMounted(async () => {
                         </div>
                     </div>
                 </template>
-                <Button variant="primary" type="button"> Cart ({{ appStore.cartCount }}) </Button>
+                <RouterLink to="/cart">
+                    <Button variant="primary" type="button">
+                        Cart ({{ cartStore.totalItems }})
+                    </Button>
+                </RouterLink>
             </div>
         </header>
 

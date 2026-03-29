@@ -4,10 +4,10 @@ import { RouterLink } from "vue-router"
 import AppLayout from "@/layouts/AppLayout.vue"
 import Button from "@/components/Button.vue"
 import { useProductStore, type CategoryResponse, type ProductResponse } from "@/stores/products"
-import { useAppStore } from "@/stores/app"
+import { useCartStore } from "@/stores/cart"
 
 const productStore = useProductStore()
-const appStore = useAppStore()
+const cartStore = useCartStore()
 
 const DEFAULT_PER_PAGE = 16
 
@@ -37,7 +37,7 @@ async function loadProducts() {
             currentStart.value,
             currentEnd.value,
             selectedCategory.value || undefined,
-            submittedSearch.value || undefined
+            submittedSearch.value || undefined,
         )
         products.value = result.products
         totalProducts.value = result.totalProducts
@@ -96,7 +96,7 @@ function getDiscountedPrice(priceCents: number, discountPercent: number | null):
 }
 
 function addToCart(product: ProductResponse) {
-    appStore.incrementCart()
+    cartStore.addItem(product)
 }
 
 onMounted(() => {
@@ -130,9 +130,7 @@ watch(selectedCategory, () => {
                         class="search-input"
                         @keyup.enter="searchProducts"
                     />
-                    <Button variant="ghost" @click="searchProducts">
-                        Search
-                    </Button>
+                    <Button variant="ghost" @click="searchProducts"> Search </Button>
                 </div>
                 <div class="category-filters">
                     <button
@@ -167,11 +165,7 @@ watch(selectedCategory, () => {
 
         <section v-else class="product-grid-section">
             <div class="product-grid">
-                <article
-                    v-for="product in products"
-                    :key="product.id"
-                    class="product-card"
-                >
+                <article v-for="product in products" :key="product.id" class="product-card">
                     <div v-if="product.discountPercent" class="discount-badge">
                         -{{ product.discountPercent }}%
                     </div>
@@ -196,31 +190,22 @@ watch(selectedCategory, () => {
                         </div>
                         <h4 class="product-name">{{ product.name }}</h4>
                         <div class="product-pricing">
-                            <span
-                                v-if="product.discountPercent"
-                                class="original-price"
-                            >
+                            <span v-if="product.discountPercent" class="original-price">
                                 {{ formatPrice(product.priceEurCents) }}
                             </span>
-                            <span
-                                class="price"
-                                :class="{ discounted: product.discountPercent }"
-                            >
+                            <span class="price" :class="{ discounted: product.discountPercent }">
                                 {{
                                     formatPrice(
                                         getDiscountedPrice(
                                             product.priceEurCents,
-                                            product.discountPercent ?? null
-                                        )
+                                            product.discountPercent ?? null,
+                                        ),
                                     )
                                 }}
                             </span>
                         </div>
                         <div class="product-actions">
-                            <RouterLink
-                                :to="`/product/${product.slug}`"
-                                class="view-details-btn"
-                            >
+                            <RouterLink :to="`/product/${product.slug}`" class="view-details-btn">
                                 View Details
                             </RouterLink>
                             <Button
@@ -237,23 +222,11 @@ watch(selectedCategory, () => {
             </div>
 
             <div class="pagination">
-                <Button
-                    variant="ghost"
-                    :disabled="!hasPrevPage"
-                    @click="prevPage"
-                >
+                <Button variant="ghost" :disabled="!hasPrevPage" @click="prevPage">
                     Previous
                 </Button>
-                <span class="page-indicator">
-                    Page {{ currentPage }} of {{ totalPages }}
-                </span>
-                <Button
-                    variant="ghost"
-                    :disabled="!hasNextPage"
-                    @click="nextPage"
-                >
-                    Next
-                </Button>
+                <span class="page-indicator"> Page {{ currentPage }} of {{ totalPages }} </span>
+                <Button variant="ghost" :disabled="!hasNextPage" @click="nextPage"> Next </Button>
             </div>
         </section>
     </AppLayout>
@@ -411,11 +384,7 @@ watch(selectedCategory, () => {
 .product-placeholder {
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-        135deg,
-        var(--panel-dark) 0%,
-        rgba(245, 140, 70, 0.1) 100%
-    );
+    background: linear-gradient(135deg, var(--panel-dark) 0%, rgba(245, 140, 70, 0.1) 100%);
 }
 
 .product-info {
@@ -521,7 +490,7 @@ watch(selectedCategory, () => {
         flex-direction: column;
         align-items: flex-start;
     }
-    
+
     .search-input {
         width: 100%;
     }

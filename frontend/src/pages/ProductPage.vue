@@ -4,13 +4,13 @@ import { useRoute, useRouter, RouterLink } from "vue-router"
 import AppLayout from "@/layouts/AppLayout.vue"
 import Button from "@/components/Button.vue"
 import { useProductStore, type ProductResponse } from "@/stores/products"
-import { useAppStore } from "@/stores/app"
+import { useCartStore } from "@/stores/cart"
 import { useAuthStore } from "@/stores/auth"
 
 const route = useRoute()
 const router = useRouter()
 const productStore = useProductStore()
-const appStore = useAppStore()
+const cartStore = useCartStore()
 const authStore = useAuthStore()
 
 const product = ref<ProductResponse | null>(null)
@@ -43,14 +43,12 @@ function getDiscountedPrice(priceCents: number, discountPercent: number | null):
 
 function addToCart() {
     if (!product.value || !product.value.inStock) return
-    for (let i = 0; i < quantity.value; i++) {
-        appStore.incrementCart()
-    }
-    router.push("/")
+    cartStore.addItem(product.value, quantity.value)
+    router.push("/cart")
 }
 
 function gotoModifyProduct() {
-    const id = product.value?.id;
+    const id = product.value?.id
     let path = "/admin/products/" + id
 
     let backUrl: string | undefined = "/product/" + product.value?.slug
@@ -77,9 +75,7 @@ onMounted(() => {
 <template>
     <AppLayout>
         <section class="back-link">
-            <RouterLink to="/catalogue" class="back-btn">
-                &larr; Back to Catalogue
-            </RouterLink>
+            <RouterLink to="/catalogue" class="back-btn"> &larr; Back to Catalogue </RouterLink>
         </section>
 
         <section v-if="isLoading" class="loading">
@@ -100,10 +96,7 @@ onMounted(() => {
                         class="product-image"
                     />
                     <div v-else class="product-placeholder"></div>
-                    <div
-                        v-if="product.discountPercent"
-                        class="discount-badge"
-                    >
+                    <div v-if="product.discountPercent" class="discount-badge">
                         -{{ product.discountPercent }}%
                     </div>
                 </div>
@@ -111,11 +104,7 @@ onMounted(() => {
 
             <div class="product-info-section">
                 <div class="product-meta">
-                    <span
-                        v-for="cat in product.categories"
-                        :key="cat.id"
-                        class="category-tag"
-                    >
+                    <span v-for="cat in product.categories" :key="cat.id" class="category-tag">
                         {{ cat.name }}
                     </span>
                 </div>
@@ -123,22 +112,16 @@ onMounted(() => {
                 <h1 class="product-name">{{ product.name }}</h1>
 
                 <div class="product-pricing">
-                    <span
-                        v-if="product.discountPercent"
-                        class="original-price"
-                    >
+                    <span v-if="product.discountPercent" class="original-price">
                         {{ formatPrice(product.priceEurCents) }}
                     </span>
-                    <span
-                        class="current-price"
-                        :class="{ discounted: product.discountPercent }"
-                    >
+                    <span class="current-price" :class="{ discounted: product.discountPercent }">
                         {{
                             formatPrice(
                                 getDiscountedPrice(
                                     product.priceEurCents,
-                                        product.discountPercent ?? null
-                                )
+                                    product.discountPercent ?? null,
+                                ),
                             )
                         }}
                     </span>
@@ -148,10 +131,7 @@ onMounted(() => {
 
                 <div class="stock-status">
                     <span
-                        :class="[
-                            'stock-indicator',
-                            product.inStock ? 'in-stock' : 'out-of-stock',
-                        ]"
+                        :class="['stock-indicator', product.inStock ? 'in-stock' : 'out-of-stock']"
                     ></span>
                     {{ product.inStock ? "In Stock" : "Out of Stock" }}
                     <span v-if="product.inStock" class="stock-count">
@@ -178,10 +158,12 @@ onMounted(() => {
                         </button>
                     </div>
 
-                    <Button variant="primary" @click="addToCart">
-                        Add to Cart
-                    </Button>
-                    <Button v-if="authStore.currentUser?.admin" variant="ghost" @click="gotoModifyProduct">
+                    <Button variant="primary" @click="addToCart"> Add to Cart </Button>
+                    <Button
+                        v-if="authStore.currentUser?.admin"
+                        variant="ghost"
+                        @click="gotoModifyProduct"
+                    >
                         Modify this product
                     </Button>
                 </div>
@@ -245,11 +227,7 @@ onMounted(() => {
 .product-placeholder {
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-        135deg,
-        var(--panel-dark) 0%,
-        rgba(245, 140, 70, 0.1) 100%
-    );
+    background: linear-gradient(135deg, var(--panel-dark) 0%, rgba(245, 140, 70, 0.1) 100%);
 }
 
 .discount-badge {
