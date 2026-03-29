@@ -37,7 +37,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
         body: options.body ? JSON.stringify(options.body) : undefined,
     })
 
-    if (!response.ok) {
+    // 204 is not an error, but I wish to handle it kind of like an error? Very jank code and I
+    // have internship tomorrow, cant think
+    if (!response.ok || response.status == 204) {
         const contentType = response.headers.get("Content-Type") ?? ""
         const payload = contentType.includes("application/json")
             ? ((await response.json().catch(() => undefined)) as ErrorPayload | undefined)
@@ -48,9 +50,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
         throw new ApiError(message, response.status, code)
     }
 
-    if (response.status === 204) {
-        return undefined as T
-    }
+    // if (response.status === 204) {
+    //     return undefined as T
+    // }
 
     const contentType = response.headers.get("Content-Type") ?? ""
     if (contentType.includes("application/json")) {

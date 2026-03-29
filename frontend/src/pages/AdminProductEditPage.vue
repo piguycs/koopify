@@ -122,11 +122,6 @@ function errorMessageToast(err: unknown, message: string) {
     }
 }
 
-function successMessageToast(message: string) {
-    successMessage.value = message
-    errorMessage.value = ""
-}
-
 function validateForm(): string | null {
     if (!name.value.trim()) return "Name is required"
     if (!slug.value.trim()) return "Slug is required"

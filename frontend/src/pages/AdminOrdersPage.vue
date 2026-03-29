@@ -46,12 +46,8 @@ async function loadOrders() {
     try {
         orders.value = await authStore.listAllOrders()
     } catch (err) {
-        // no content, means not really an error
-        if (err instanceof ApiError && err.status == 204) {
-            // we dont set any message actually, not an error condition
-            // errorMessage.value = err.message
-        } else if (err instanceof ApiError) {
-            errorMessage.value = JSON.stringify(err)
+        if (err instanceof ApiError) {
+            errorMessage.value = err.message
         } else {
             errorMessage.value = "Failed to load orders"
         }
@@ -71,7 +67,14 @@ async function refreshOrderStatus(orderId: number) {
         }
     } catch (err) {
         if (err instanceof ApiError) {
-            errorMessage.value = err.message
+            if (err.status == 204) {
+                // no error here, this is what the special 204 error code handling in the api
+                // client is for. I am using 204 almost as a sentinal value, but that is fine ig...
+                // errorMessage.value = "HI"
+            } else {
+                errorMessage.value = err.message
+
+            }
         } else {
             errorMessage.value = "Failed to refresh order status"
         }
@@ -198,6 +201,12 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.orders-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
 .page-header {
     margin-bottom: 32px;
 }
