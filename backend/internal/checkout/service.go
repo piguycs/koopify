@@ -111,6 +111,11 @@ func (s *CheckoutService) CreateCheckoutSession(
 		if err != nil {
 			return nil, fmt.Errorf("failed to create order item: %w", err)
 		}
+
+		_, err = s.repo.DecrementProductInventory(ctx, item.ProductID, item.Quantity)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decrement inventory for product %d: %w", item.ProductID, err)
+		}
 	}
 
 	checkoutURL, err := s.createAdyenSession(ctx, order.ID, totalPrice)
