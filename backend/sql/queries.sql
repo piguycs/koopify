@@ -300,3 +300,57 @@ from categories c
 join product_categories pc on c.id = pc.category_id
 where pc.product_id = $1
 order by c.name;
+
+-- Orders
+-- name: CreateOrder :one
+insert into orders (user_id, status, total_eur_cents, adyen_reference)
+values ($1, $2, $3, $4)
+returning id, user_id, status, total_eur_cents, adyen_reference, created_at, updated_at;
+
+-- name: GetOrder :one
+select id, user_id, status, total_eur_cents, adyen_reference, created_at, updated_at
+from orders where id = $1 limit 1;
+
+-- name: GetOrderByUser :one
+select id, user_id, status, total_eur_cents, adyen_reference, created_at, updated_at
+from orders where id = $1 and user_id = $2 limit 1;
+
+-- name: ListOrdersByUser :many
+select id, user_id, status, total_eur_cents, adyen_reference, created_at, updated_at
+from orders where user_id = $1 order by created_at desc;
+
+-- name: UpdateOrderStatus :one
+update orders set status = $2, updated_at = now()
+where id = $1
+returning id, user_id, status, total_eur_cents, adyen_reference, created_at, updated_at;
+
+-- name: UpdateOrderAdyenReference :one
+update orders set adyen_reference = $2, updated_at = now()
+where id = $1
+returning id, user_id, status, total_eur_cents, adyen_reference, created_at, updated_at;
+
+-- name: CreateOrderItem :one
+insert into order_items (order_id, product_id, product_name, quantity, unit_price_cents)
+values ($1, $2, $3, $4, $5)
+returning id, order_id, product_id, product_name, quantity, unit_price_cents, created_at;
+
+-- name: ListOrderItems :many
+select id, order_id, product_id, product_name, quantity, unit_price_cents, created_at
+from order_items where order_id = $1 order by created_at;
+
+-- name: GetOrderItem :one
+select id, order_id, product_id, product_name, quantity, unit_price_cents, created_at
+from order_items where id = $1 limit 1;
+
+-- Inventory management
+-- name: DecrementProductInventory :one
+update products set
+    inventory_count = inventory_count - $2,
+    in_stock = (inventory_count - $2) > 0,
+    updated_at = now()
+where id = $1 and inventory_count >= $2
+returning id, name, slug, description, image_url, price_eur_cents, discount_percent, inventory_count, in_stock, is_active, created_at, updated_at;
+
+-- name: GetProductForUpdate :one
+select id, name, slug, description, image_url, price_eur_cents, discount_percent, inventory_count, in_stock, is_active, created_at, updated_at
+from products where id = $1 limit 1 for update;

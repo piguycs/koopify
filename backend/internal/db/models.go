@@ -21,6 +21,26 @@ type DeletionPolicy struct {
 	DeletionDelayHours int32
 }
 
+type Order struct {
+	ID             int64
+	UserID         int64
+	Status         string
+	TotalEurCents  int32
+	AdyenReference pgtype.Text
+	CreatedAt      pgtype.Timestamptz
+	UpdatedAt      pgtype.Timestamptz
+}
+
+type OrderItem struct {
+	ID             int64
+	OrderID        int64
+	ProductID      int64
+	ProductName    string
+	Quantity       int32
+	UnitPriceCents int32
+	CreatedAt      pgtype.Timestamptz
+}
+
 type Product struct {
 	ID              int64
 	Name            string

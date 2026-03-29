@@ -143,6 +143,75 @@ func (q *Queries) CreateCategory(ctx context.Context, arg CreateCategoryParams) 
 	return i, err
 }
 
+const createOrder = `-- name: CreateOrder :one
+insert into orders (user_id, status, total_eur_cents, adyen_reference)
+values ($1, $2, $3, $4)
+returning id, user_id, status, total_eur_cents, adyen_reference, created_at, updated_at
+`
+
+type CreateOrderParams struct {
+	UserID         int64
+	Status         string
+	TotalEurCents  int32
+	AdyenReference pgtype.Text
+}
+
+// Orders
+func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order, error) {
+	row := q.db.QueryRow(ctx, createOrder,
+		arg.UserID,
+		arg.Status,
+		arg.TotalEurCents,
+		arg.AdyenReference,
+	)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Status,
+		&i.TotalEurCents,
+		&i.AdyenReference,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const createOrderItem = `-- name: CreateOrderItem :one
+insert into order_items (order_id, product_id, product_name, quantity, unit_price_cents)
+values ($1, $2, $3, $4, $5)
+returning id, order_id, product_id, product_name, quantity, unit_price_cents, created_at
+`
+
+type CreateOrderItemParams struct {
+	OrderID        int64
+	ProductID      int64
+	ProductName    string
+	Quantity       int32
+	UnitPriceCents int32
+}
+
+func (q *Queries) CreateOrderItem(ctx context.Context, arg CreateOrderItemParams) (OrderItem, error) {
+	row := q.db.QueryRow(ctx, createOrderItem,
+		arg.OrderID,
+		arg.ProductID,
+		arg.ProductName,
+		arg.Quantity,
+		arg.UnitPriceCents,
+	)
+	var i OrderItem
+	err := row.Scan(
+		&i.ID,
+		&i.OrderID,
+		&i.ProductID,
+		&i.ProductName,
+		&i.Quantity,
+		&i.UnitPriceCents,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const createProduct = `-- name: CreateProduct :one
 insert into products (
     name, slug, description, image_url, price_eur_cents, discount_percent, inventory_count, in_stock, is_active
@@ -219,6 +288,41 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Admin,
 		&i.RequestedDeletionAt,
 		&i.DeletionScheduledAt,
+	)
+	return i, err
+}
+
+const decrementProductInventory = `-- name: DecrementProductInventory :one
+update products set
+    inventory_count = inventory_count - $2,
+    in_stock = (inventory_count - $2) > 0,
+    updated_at = now()
+where id = $1 and inventory_count >= $2
+returning id, name, slug, description, image_url, price_eur_cents, discount_percent, inventory_count, in_stock, is_active, created_at, updated_at
+`
+
+type DecrementProductInventoryParams struct {
+	ID             int64
+	InventoryCount int32
+}
+
+// Inventory management
+func (q *Queries) DecrementProductInventory(ctx context.Context, arg DecrementProductInventoryParams) (Product, error) {
+	row := q.db.QueryRow(ctx, decrementProductInventory, arg.ID, arg.InventoryCount)
+	var i Product
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Slug,
+		&i.Description,
+		&i.ImageUrl,
+		&i.PriceEurCents,
+		&i.DiscountPercent,
+		&i.InventoryCount,
+		&i.InStock,
+		&i.IsActive,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -310,6 +414,71 @@ func (q *Queries) GetDeletionPolicy(ctx context.Context) (DeletionPolicy, error)
 	row := q.db.QueryRow(ctx, getDeletionPolicy)
 	var i DeletionPolicy
 	err := row.Scan(&i.ID, &i.DeletionDelayHours)
+	return i, err
+}
+
+const getOrder = `-- name: GetOrder :one
+select id, user_id, status, total_eur_cents, adyen_reference, created_at, updated_at
+from orders where id = $1 limit 1
+`
+
+func (q *Queries) GetOrder(ctx context.Context, id int64) (Order, error) {
+	row := q.db.QueryRow(ctx, getOrder, id)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Status,
+		&i.TotalEurCents,
+		&i.AdyenReference,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getOrderByUser = `-- name: GetOrderByUser :one
+select id, user_id, status, total_eur_cents, adyen_reference, created_at, updated_at
+from orders where id = $1 and user_id = $2 limit 1
+`
+
+type GetOrderByUserParams struct {
+	ID     int64
+	UserID int64
+}
+
+func (q *Queries) GetOrderByUser(ctx context.Context, arg GetOrderByUserParams) (Order, error) {
+	row := q.db.QueryRow(ctx, getOrderByUser, arg.ID, arg.UserID)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Status,
+		&i.TotalEurCents,
+		&i.AdyenReference,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getOrderItem = `-- name: GetOrderItem :one
+select id, order_id, product_id, product_name, quantity, unit_price_cents, created_at
+from order_items where id = $1 limit 1
+`
+
+func (q *Queries) GetOrderItem(ctx context.Context, id int64) (OrderItem, error) {
+	row := q.db.QueryRow(ctx, getOrderItem, id)
+	var i OrderItem
+	err := row.Scan(
+		&i.ID,
+		&i.OrderID,
+		&i.ProductID,
+		&i.ProductName,
+		&i.Quantity,
+		&i.UnitPriceCents,
+		&i.CreatedAt,
+	)
 	return i, err
 }
 
@@ -407,6 +576,31 @@ func (q *Queries) GetProductCategories(ctx context.Context, productID int64) ([]
 		return nil, err
 	}
 	return items, nil
+}
+
+const getProductForUpdate = `-- name: GetProductForUpdate :one
+select id, name, slug, description, image_url, price_eur_cents, discount_percent, inventory_count, in_stock, is_active, created_at, updated_at
+from products where id = $1 limit 1 for update
+`
+
+func (q *Queries) GetProductForUpdate(ctx context.Context, id int64) (Product, error) {
+	row := q.db.QueryRow(ctx, getProductForUpdate, id)
+	var i Product
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Slug,
+		&i.Description,
+		&i.ImageUrl,
+		&i.PriceEurCents,
+		&i.DiscountPercent,
+		&i.InventoryCount,
+		&i.InStock,
+		&i.IsActive,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const getUser = `-- name: GetUser :one
@@ -644,6 +838,72 @@ func (q *Queries) ListCategories(ctx context.Context) ([]Category, error) {
 			&i.ID,
 			&i.Name,
 			&i.Slug,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOrderItems = `-- name: ListOrderItems :many
+select id, order_id, product_id, product_name, quantity, unit_price_cents, created_at
+from order_items where order_id = $1 order by created_at
+`
+
+func (q *Queries) ListOrderItems(ctx context.Context, orderID int64) ([]OrderItem, error) {
+	rows, err := q.db.Query(ctx, listOrderItems, orderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []OrderItem
+	for rows.Next() {
+		var i OrderItem
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrderID,
+			&i.ProductID,
+			&i.ProductName,
+			&i.Quantity,
+			&i.UnitPriceCents,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOrdersByUser = `-- name: ListOrdersByUser :many
+select id, user_id, status, total_eur_cents, adyen_reference, created_at, updated_at
+from orders where user_id = $1 order by created_at desc
+`
+
+func (q *Queries) ListOrdersByUser(ctx context.Context, userID int64) ([]Order, error) {
+	rows, err := q.db.Query(ctx, listOrdersByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Order
+	for rows.Next() {
+		var i Order
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Status,
+			&i.TotalEurCents,
+			&i.AdyenReference,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -970,6 +1230,58 @@ func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) 
 		&i.ID,
 		&i.Name,
 		&i.Slug,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateOrderAdyenReference = `-- name: UpdateOrderAdyenReference :one
+update orders set adyen_reference = $2, updated_at = now()
+where id = $1
+returning id, user_id, status, total_eur_cents, adyen_reference, created_at, updated_at
+`
+
+type UpdateOrderAdyenReferenceParams struct {
+	ID             int64
+	AdyenReference pgtype.Text
+}
+
+func (q *Queries) UpdateOrderAdyenReference(ctx context.Context, arg UpdateOrderAdyenReferenceParams) (Order, error) {
+	row := q.db.QueryRow(ctx, updateOrderAdyenReference, arg.ID, arg.AdyenReference)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Status,
+		&i.TotalEurCents,
+		&i.AdyenReference,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateOrderStatus = `-- name: UpdateOrderStatus :one
+update orders set status = $2, updated_at = now()
+where id = $1
+returning id, user_id, status, total_eur_cents, adyen_reference, created_at, updated_at
+`
+
+type UpdateOrderStatusParams struct {
+	ID     int64
+	Status string
+}
+
+func (q *Queries) UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusParams) (Order, error) {
+	row := q.db.QueryRow(ctx, updateOrderStatus, arg.ID, arg.Status)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Status,
+		&i.TotalEurCents,
+		&i.AdyenReference,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
