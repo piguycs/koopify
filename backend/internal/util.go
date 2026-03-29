@@ -3,7 +3,9 @@ package internal
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"os"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v5"
@@ -90,4 +92,28 @@ func BindAndValidate[T any](ctx *echo.Context) (*T, error) {
 	}
 
 	return data, nil
+}
+
+type EnvVarDef struct {
+	Value *string
+	Var   string
+}
+
+func GetEnvs(vars []EnvVarDef) error {
+	missing := []string{}
+
+	for _, varDef := range vars {
+		value := GetEnv(varDef.Var)
+		if value == nil {
+			missing = append(missing, varDef.Var)
+		} else {
+			*varDef.Value = *value
+		}
+	}
+
+	if len(missing) > 0 {
+		return errors.New("missing required environment variables: " + strings.Join(missing, ", "))
+	}
+
+	return nil
 }

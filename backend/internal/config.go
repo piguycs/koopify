@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 	"errors"
 	"strings"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
@@ -26,32 +28,21 @@ func LoadConfig() (Config, error) {
 	pgdb := GetEnvDefault("PGDB", DefaultPgDb)
 	hostAddr := GetEnvDefault("HOST_ADDR", DefaultHostAddr)
 
-	jwtSecret := GetEnv("JWT_SECRET")
-	adyenApiKey := GetEnv("ADYEN_API_KEY")
-	adyenMerchantAccount := GetEnv("ADYEN_MERCHANT_ACCOUNT")
-	adyenThemeId := GetEnv("ADYEN_THEME_ID")
-	checkoutReturnUrl := GetEnv("CHECKOUT_RETURN_URL")
+	var jwtSecret, adyenApiKey, adyenMerchantAccount, adyenThemeId, checkoutReturnUrl,
+		resendApiKey, sendingEmailAddress *string
 
-	// go through all, make a list of the ones which are missing and notify the user
-	missing := []string{}
-	if jwtSecret == nil {
-		missing = append(missing, "JWT_SECRET")
-	}
-	if adyenApiKey == nil {
-		missing = append(missing, "ADYEN_API_KEY")
-	}
-	if adyenMerchantAccount == nil {
-		missing = append(missing, "ADYEN_MERCHANT_ACCOUNT")
-	}
-	if adyenThemeId == nil {
-		missing = append(missing, "ADYEN_THEME_ID")
-	}
-	if checkoutReturnUrl == nil {
-		missing = append(missing, "CHECKOUT_RETURN_URL")
-	}
+	err := GetEnvs([]EnvVarDef{
+		{Value: jwtSecret, Var: "JWT_SECRET"},
+		{Value: adyenApiKey, Var: "ADYEN_API_KEY"},
+		{Value: adyenMerchantAccount, Var: "ADYEN_MERCHANT_ACCOUNT"},
+		{Value: adyenThemeId, Var: "ADYEN_THEME_ID"},
+		{Value: checkoutReturnUrl, Var: "CHECKOUT_RETURN_URL"},
+		{Value: resendApiKey, Var: "RESEND_API_KEY"},
+		{Value: sendingEmailAddress, Var: "SENDING_EMAIL_ADDRESS"},
+	})
 
-	if len(missing) > 0 {
-		return Config{}, errors.New("missing required environment variables: " + strings.Join(missing, ", "))
+	if err != nil {
+		return Config{}, err
 	}
 
 	// pass in the environment variable keys for reading the TLS config
