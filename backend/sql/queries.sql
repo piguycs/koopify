@@ -149,6 +149,52 @@ join product_categories pc on p.id = pc.product_id
 where pc.category_id = $1 and p.is_active = true
 order by p.created_at desc;
 
+-- name: ListProductsPaginated :many
+select id,
+	name,
+	slug,
+	description,
+	image_url,
+	price_eur_cents,
+	discount_percent,
+	inventory_count,
+	in_stock,
+	is_active,
+	created_at,
+	updated_at
+from products where is_active = true
+order by created_at desc
+limit $1 offset $2;
+
+-- name: ListProductsPaginatedByCategory :many
+select
+	p.id,
+	p.name,
+	p.slug,
+	p.description,
+	p.image_url,
+	p.price_eur_cents,
+	p.discount_percent,
+	p.inventory_count,
+	p.in_stock,
+	p.is_active,
+	p.created_at,
+	p.updated_at
+from products p
+join product_categories pc on p.id = pc.product_id
+where pc.category_id = $1 and p.is_active = true
+order by p.created_at desc
+limit $2 offset $3;
+
+-- name: CountActiveProducts :one
+select count(*) from products where is_active = true;
+
+-- name: CountActiveProductsByCategory :one
+select count(*)
+from products p
+join product_categories pc on p.id = pc.product_id
+where pc.category_id = $1 and p.is_active = true;
+
 -- Categories
 -- name: CreateCategory :one
 insert into categories (name, slug)

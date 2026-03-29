@@ -50,6 +50,31 @@ func (q *Queries) CancelUserDeletion(ctx context.Context, id int64) (User, error
 	return i, err
 }
 
+const countActiveProducts = `-- name: CountActiveProducts :one
+select count(*) from products where is_active = true
+`
+
+func (q *Queries) CountActiveProducts(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countActiveProducts)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countActiveProductsByCategory = `-- name: CountActiveProductsByCategory :one
+select count(*)
+from products p
+join product_categories pc on p.id = pc.product_id
+where pc.category_id = $1 and p.is_active = true
+`
+
+func (q *Queries) CountActiveProductsByCategory(ctx context.Context, categoryID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countActiveProductsByCategory, categoryID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createCategory = `-- name: CreateCategory :one
 insert into categories (name, slug)
 values ($1, $2)
@@ -534,6 +559,122 @@ order by p.created_at desc
 
 func (q *Queries) ListProductsByCategory(ctx context.Context, categoryID int64) ([]Product, error) {
 	rows, err := q.db.Query(ctx, listProductsByCategory, categoryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Product
+	for rows.Next() {
+		var i Product
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Slug,
+			&i.Description,
+			&i.ImageUrl,
+			&i.PriceEurCents,
+			&i.DiscountPercent,
+			&i.InventoryCount,
+			&i.InStock,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProductsPaginated = `-- name: ListProductsPaginated :many
+select id,
+	name,
+	slug,
+	description,
+	image_url,
+	price_eur_cents,
+	discount_percent,
+	inventory_count,
+	in_stock,
+	is_active,
+	created_at,
+	updated_at
+from products where is_active = true
+order by created_at desc
+limit $1 offset $2
+`
+
+type ListProductsPaginatedParams struct {
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) ListProductsPaginated(ctx context.Context, arg ListProductsPaginatedParams) ([]Product, error) {
+	rows, err := q.db.Query(ctx, listProductsPaginated, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Product
+	for rows.Next() {
+		var i Product
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Slug,
+			&i.Description,
+			&i.ImageUrl,
+			&i.PriceEurCents,
+			&i.DiscountPercent,
+			&i.InventoryCount,
+			&i.InStock,
+			&i.IsActive,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProductsPaginatedByCategory = `-- name: ListProductsPaginatedByCategory :many
+select
+	p.id,
+	p.name,
+	p.slug,
+	p.description,
+	p.image_url,
+	p.price_eur_cents,
+	p.discount_percent,
+	p.inventory_count,
+	p.in_stock,
+	p.is_active,
+	p.created_at,
+	p.updated_at
+from products p
+join product_categories pc on p.id = pc.product_id
+where pc.category_id = $1 and p.is_active = true
+order by p.created_at desc
+limit $2 offset $3
+`
+
+type ListProductsPaginatedByCategoryParams struct {
+	CategoryID int64
+	Limit      int32
+	Offset     int32
+}
+
+func (q *Queries) ListProductsPaginatedByCategory(ctx context.Context, arg ListProductsPaginatedByCategoryParams) ([]Product, error) {
+	rows, err := q.db.Query(ctx, listProductsPaginatedByCategory, arg.CategoryID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
