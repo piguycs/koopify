@@ -162,7 +162,7 @@ func (s *ProductService) ListActiveProductsPaginated(
 	ctx context.Context,
 	start int32,
 	end int32,
-) (*[]ProductResponse, error) {
+) (*ProductResponsePage, error) {
 	if start < 0 {
 		start = 0
 	}
@@ -178,12 +178,22 @@ func (s *ProductService) ListActiveProductsPaginated(
 		return nil, err
 	}
 
+	totalProducts, err := s.repo.CountActiveProducts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	enriched, err := s.enrichProducts(ctx, products)
 	if err != nil {
 		return nil, err
 	}
 
-	return &enriched, nil
+	return &ProductResponsePage{
+		Start:         start,
+		End:           int32(len(enriched)),
+		TotalProducts: totalProducts,
+		Products:      enriched,
+	}, nil
 }
 
 // ListActiveProductsPaginatedByCategory returns active products in a category with index-based pagination.
@@ -192,7 +202,7 @@ func (s *ProductService) ListActiveProductsPaginatedByCategory(
 	categorySlug string,
 	start int32,
 	end int32,
-) (*[]ProductResponse, error) {
+) (*ProductResponsePage, error) {
 	cat, err := s.repo.GetCategoryBySlug(ctx, categorySlug)
 	if err != nil {
 		return nil, err
@@ -213,12 +223,22 @@ func (s *ProductService) ListActiveProductsPaginatedByCategory(
 		return nil, err
 	}
 
+	totalProducts, err := s.repo.CountActiveProductsByCategory(ctx, cat.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	enriched, err := s.enrichProducts(ctx, products)
 	if err != nil {
 		return nil, err
 	}
 
-	return &enriched, nil
+	return &ProductResponsePage{
+		Start:         start,
+		End:           int32(len(enriched)),
+		TotalProducts: totalProducts,
+		Products:      enriched,
+	}, nil
 }
 
 // replaces the full category set for a producs. It removes categories which are not wanted and

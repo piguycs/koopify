@@ -24,15 +24,13 @@ func NewProductController(service ProductService) ProductController {
 }
 
 // This is a public handler, which returns 16 results by default and has pagination. It can also
-// filter by category. I would probably add an endpoint to count the total number of items, WIP
+// filter by category. This also returns the start, end, total and current alongside the data
 // Query params:
 //   - category=<slug>: filter by category (optional)
 //   - start=<int>: starting index (0-based, default: 0)
 //   - end=<int>: ending index (exclusive, default: 16)
 //
 // Returns a paginated list of active products.
-//
-// TODO: add an endpoint for counting the available number of items, the repo already supports it
 func (pc *ProductController) ListProducts(ctx *echo.Context) error {
 	start := int32(0) // start at 0, obviously
 	end := int32(DefaultPaginationLimit)

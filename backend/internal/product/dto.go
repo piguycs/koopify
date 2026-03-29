@@ -14,6 +14,13 @@ type CategoryResponse struct {
 	Slug string `json:"slug"`
 }
 
+type ProductResponsePage struct {
+	Start         int32             `json:"start"`
+	End           int32             `json:"end"`
+	TotalProducts int64             `json:"totalProducts"` // total in the db
+	Products      []ProductResponse `json:"products"`
+}
+
 // ProductResponse is the full product representation including its categories.
 type ProductResponse struct {
 	ID              int64              `json:"id"`
