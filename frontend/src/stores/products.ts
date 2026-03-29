@@ -62,7 +62,12 @@ function authToken(): string {
 export const useProductStore = defineStore("products", {
     actions: {
         // Public
-        async listActiveProducts(start: number, end: number, categorySlug?: string, searchTerm?: string): Promise<ProductResponsePage> {
+        async listActiveProducts(
+            start: number,
+            end: number,
+            categorySlug?: string,
+            searchTerm?: string,
+        ): Promise<ProductResponsePage> {
             let query = `start=${start}&end=${end}`
             if (categorySlug) {
                 query += `&category=${encodeURIComponent(categorySlug)}`
@@ -74,7 +79,9 @@ export const useProductStore = defineStore("products", {
         },
 
         async getProductBySlug(slug: string): Promise<ProductResponse> {
-            return apiClient.get<ProductResponse>(`/public_api/v1/products/${encodeURIComponent(slug)}`)
+            return apiClient.get<ProductResponse>(
+                `/public_api/v1/products/${encodeURIComponent(slug)}`,
+            )
         },
 
         async listCategories(): Promise<CategoryResponse[]> {
@@ -82,7 +89,12 @@ export const useProductStore = defineStore("products", {
         },
 
         // Admin
-        async adminListAllProducts(start: number, end: number, categorySlug?: string, searchTerm?: string): Promise<ProductResponsePage> {
+        async adminListAllProducts(
+            start: number,
+            end: number,
+            categorySlug?: string,
+            searchTerm?: string,
+        ): Promise<ProductResponsePage> {
             let query = `start=${start}&end=${end}`
             if (categorySlug) {
                 query += `&category=${encodeURIComponent(categorySlug)}`
@@ -107,7 +119,10 @@ export const useProductStore = defineStore("products", {
             })
         },
 
-        async adminUpdateProduct(id: number, payload: UpdateProductPayload): Promise<ProductResponse> {
+        async adminUpdateProduct(
+            id: number,
+            payload: UpdateProductPayload,
+        ): Promise<ProductResponse> {
             return apiClient.put<ProductResponse>(`/api/v1/products/${id}`, payload, {
                 authToken: authToken(),
             })

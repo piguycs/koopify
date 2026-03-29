@@ -27,7 +27,8 @@ const handleSubmit = async () => {
     try {
         await authStore.signIn(email.value, password.value)
         const redirect = route.query.redirect
-        const nextPath = typeof redirect === "string" && redirect.length > 0 ? redirect : "/catalogue"
+        const nextPath =
+            typeof redirect === "string" && redirect.length > 0 ? redirect : "/catalogue"
         await router.push(nextPath)
     } catch (err) {
         if (err instanceof ApiError) {

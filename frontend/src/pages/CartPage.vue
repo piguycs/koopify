@@ -101,17 +101,6 @@ function handleCheckout() {
                         </button>
                     </div>
 
-                    <div class="item-subtotal">
-                        {{
-                            formatPrice(
-                                getDiscountedPrice(
-                                    item.priceEurCents,
-                                    item.discountPercent ?? null,
-                                ) * item.quantity,
-                            )
-                        }}
-                    </div>
-
                     <button
                         class="remove-btn"
                         @click="cartStore.removeItem(item.id)"
@@ -123,15 +112,7 @@ function handleCheckout() {
             </div>
 
             <aside class="cart-summary">
-                <h2>Order Summary</h2>
-                <div class="summary-row">
-                    <span>Subtotal ({{ cartStore.totalItems }} items)</span>
-                    <span>{{ formatPrice(cartStore.totalPrice) }}</span>
-                </div>
-                <div class="summary-row total">
-                    <span>Total</span>
-                    <span>{{ formatPrice(cartStore.totalPrice) }}</span>
-                </div>
+                <h2>Order Total: {{ formatPrice(cartStore.totalPrice) }}</h2>
                 <div class="summary-actions">
                     <Button variant="primary" @click="handleCheckout"> Proceed to Checkout </Button>
                     <Button variant="ghost" @click="gotoCatalogue">Continue Shopping</Button>
@@ -282,12 +263,6 @@ function handleCheckout() {
     line-height: 32px;
 }
 
-.item-subtotal {
-    font-weight: 700;
-    min-width: 70px;
-    text-align: right;
-}
-
 .remove-btn {
     width: 32px;
     height: 32px;
@@ -322,21 +297,6 @@ function handleCheckout() {
     margin: 0 0 20px;
 }
 
-.summary-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    font-size: 14px;
-}
-
-.summary-row.total {
-    border-top: 1px solid var(--border);
-    margin-top: 8px;
-    padding-top: 16px;
-    font-weight: 700;
-    font-size: 18px;
-}
-
 .summary-actions {
     display: flex;
     flex-direction: column;
@@ -362,8 +322,7 @@ function handleCheckout() {
         gap: 12px;
     }
 
-    .item-quantity,
-    .item-subtotal {
+    .item-quantity {
         grid-column: 2;
     }
 

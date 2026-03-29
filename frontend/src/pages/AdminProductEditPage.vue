@@ -81,9 +81,7 @@ const categoryDropdownOptions = computed(() => {
 const canCreateCategory = computed(() => {
     const query = categoryInput.value.trim()
     if (!query) return false
-    return !allCategories.value.some(
-        c => c.name.toLowerCase() === query.toLowerCase(),
-    )
+    return !allCategories.value.some(c => c.name.toLowerCase() === query.toLowerCase())
 })
 
 function addCategory(cat: CategoryResponse) {
@@ -135,7 +133,10 @@ function validateForm(): string | null {
     if (!description.value.trim()) return "Description is required"
     if (priceEurCents.value < 0) return "Price cannot be negative"
     if (inventoryCount.value < 0) return "Inventory count cannot be negative"
-    if (discountPercent.value !== null && (discountPercent.value < 0 || discountPercent.value > 100)) {
+    if (
+        discountPercent.value !== null &&
+        (discountPercent.value < 0 || discountPercent.value > 100)
+    ) {
         return "Discount must be between 0 and 100"
     }
     return null
@@ -188,7 +189,6 @@ function goBackWithToast(toast: string) {
     } else {
         router.push({ name: "admin-products", state: { toast } })
     }
-    
 }
 
 function goBack() {
@@ -230,11 +230,10 @@ async function loadCategories() {
 
 onMounted(async () => {
     const backUrlData = (history.state as Record<string, unknown>)?.backUrl
-    if (typeof backUrlData === "string" && backUrlData) backUrl = backUrlData;
+    if (typeof backUrlData === "string" && backUrlData) backUrl = backUrlData
 
     await Promise.all([loadCategories(), loadProduct()])
 })
-
 </script>
 
 <template>
@@ -247,19 +246,24 @@ onMounted(async () => {
         <div v-if="isLoading" class="loading">Loading product...</div>
 
         <form v-else class="product-form" @submit.prevent="save">
-            <Toast v-if="successMessage" :message="successMessage" variant="success" @close="successMessage = ''" />
-            <Toast v-if="errorMessage" :message="errorMessage" variant="error" @close="errorMessage = ''" />
+            <Toast
+                v-if="successMessage"
+                :message="successMessage"
+                variant="success"
+                @close="successMessage = ''"
+            />
+            <Toast
+                v-if="errorMessage"
+                :message="errorMessage"
+                variant="error"
+                @close="errorMessage = ''"
+            />
 
             <div class="form-section">
                 <h2 class="section-title">Basic Info</h2>
 
                 <div class="field-row">
-                    <Input
-                        v-model="name"
-                        label="Name"
-                        placeholder="Product name"
-                        required
-                    />
+                    <Input v-model="name" label="Name" placeholder="Product name" required />
                     <div class="input-wrapper">
                         <label class="input-label">Slug</label>
                         <input
@@ -273,19 +277,11 @@ onMounted(async () => {
 
                 <div class="input-wrapper full-width">
                     <label class="input-label">Description</label>
-                    <textarea
-                        v-model="description"
-                        placeholder="Product description"
-                        rows="5"
-                    />
+                    <textarea v-model="description" placeholder="Product description" rows="5" />
                 </div>
 
                 <div class="field-row">
-                    <Input
-                        v-model="imageUrl"
-                        label="Image URL"
-                        placeholder="https://..."
-                    />
+                    <Input v-model="imageUrl" label="Image URL" placeholder="https://..." />
                 </div>
             </div>
 
@@ -335,11 +331,7 @@ onMounted(async () => {
                 <h2 class="section-title">Categories</h2>
 
                 <div class="category-chips">
-                    <span
-                        v-for="cat in selectedCategories"
-                        :key="cat.id"
-                        class="chip"
-                    >
+                    <span v-for="cat in selectedCategories" :key="cat.id" class="chip">
                         {{ cat.name }}
                         <button type="button" class="chip-remove" @click="removeCategory(cat)">
                             ×
@@ -357,7 +349,10 @@ onMounted(async () => {
                             class="default category-input"
                             placeholder="Search or type new category..."
                         />
-                        <ul v-if="categoryInput && categoryDropdownOptions.length > 0" class="dropdown">
+                        <ul
+                            v-if="categoryInput && categoryDropdownOptions.length > 0"
+                            class="dropdown"
+                        >
                             <li
                                 v-for="cat in categoryDropdownOptions"
                                 :key="cat.id"

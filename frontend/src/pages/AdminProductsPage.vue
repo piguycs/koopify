@@ -84,7 +84,7 @@ async function loadProducts() {
             currentStart.value,
             currentEnd.value,
             selectedCategory.value || undefined,
-            submittedSearch.value || undefined
+            submittedSearch.value || undefined,
         )
         products.value = result.products
         totalProducts.value = result.totalProducts
@@ -202,8 +202,18 @@ onMounted(() => {
         </section>
 
         <div class="admin-content">
-            <Toast v-if="successMessage" :message="successMessage" variant="success" @close="successMessage = null" />
-            <Toast v-if="errorMessage" :message="errorMessage" variant="error" @close="errorMessage = null" />
+            <Toast
+                v-if="successMessage"
+                :message="successMessage"
+                variant="success"
+                @close="successMessage = null"
+            />
+            <Toast
+                v-if="errorMessage"
+                :message="errorMessage"
+                variant="error"
+                @close="errorMessage = null"
+            />
 
             <div class="table-wrapper">
                 <div class="table-controls">
@@ -216,9 +226,7 @@ onMounted(() => {
                                 min-width="240px"
                                 @keyup.enter="searchProducts"
                             />
-                            <Button variant="ghost" @click="searchProducts">
-                                Search
-                            </Button>
+                            <Button variant="ghost" @click="searchProducts"> Search </Button>
                         </div>
                         <div class="category-filters">
                             <button
@@ -263,10 +271,7 @@ onMounted(() => {
                                     Name{{ getSortIndicator("name") }}
                                 </th>
                                 <th class="col-categories">Categories</th>
-                                <th
-                                    class="col-price sortable"
-                                    @click="toggleSort('priceEurCents')"
-                                >
+                                <th class="col-price sortable" @click="toggleSort('priceEurCents')">
                                     Price{{ getSortIndicator("priceEurCents") }}
                                 </th>
                                 <th
@@ -334,21 +339,11 @@ onMounted(() => {
                 </div>
 
                 <div v-if="products.length > 0" class="pagination">
-                    <Button
-                        variant="ghost"
-                        :disabled="!hasPrevPage"
-                        @click="prevPage"
-                    >
+                    <Button variant="ghost" :disabled="!hasPrevPage" @click="prevPage">
                         Previous
                     </Button>
-                    <span class="page-indicator">
-                        Page {{ currentPage }} of {{ totalPages }}
-                    </span>
-                    <Button
-                        variant="ghost"
-                        :disabled="!hasNextPage"
-                        @click="nextPage"
-                    >
+                    <span class="page-indicator"> Page {{ currentPage }} of {{ totalPages }} </span>
+                    <Button variant="ghost" :disabled="!hasNextPage" @click="nextPage">
                         Next
                     </Button>
                 </div>

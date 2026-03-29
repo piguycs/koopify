@@ -341,8 +341,18 @@ onMounted(() => {
         </section>
 
         <div class="admin-content">
-            <Toast v-if="successMessage" :message="successMessage" variant="success" @close="successMessage = ''" />
-            <Toast v-if="errorMessage" :message="errorMessage" variant="error" @close="errorMessage = ''" />
+            <Toast
+                v-if="successMessage"
+                :message="successMessage"
+                variant="success"
+                @close="successMessage = ''"
+            />
+            <Toast
+                v-if="errorMessage"
+                :message="errorMessage"
+                variant="error"
+                @close="errorMessage = ''"
+            />
 
             <div v-if="isLoading" class="loading">Loading users</div>
 

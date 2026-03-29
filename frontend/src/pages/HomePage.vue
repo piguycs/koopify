@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import AppLayout from "@/layouts/AppLayout.vue"
 import Button from "@/components/Button.vue"
-import router from "@/router";
+import router from "@/router"
 
 function gotoShop() {
-    router.push({name: "catalogue"})
+    router.push({ name: "catalogue" })
 }
 </script>
 
