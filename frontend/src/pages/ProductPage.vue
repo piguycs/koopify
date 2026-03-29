@@ -318,6 +318,7 @@ onMounted(() => {
     line-height: 1.7;
     color: var(--text);
     margin: 0;
+    white-space: pre-line;
 }
 
 .stock-status {
