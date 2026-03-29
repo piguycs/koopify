@@ -12,6 +12,9 @@ import (
 	"piguy.nl/koopify/internal/response"
 )
 
+// return 16 items when paginating, offset starts at 0 ofc
+const DefaultPaginationLimit = 16
+
 type ProductController struct {
 	service ProductService
 }
@@ -20,14 +23,36 @@ func NewProductController(service ProductService) ProductController {
 	return ProductController{service: service}
 }
 
-// ListProducts is a public handler. If a ?category=<slug> query param is provided it returns only
-// active products in that category (404 if the category slug is unknown). Without the param it
-// returns all active products.
+// This is a public handler, which returns 16 results by default and has pagination. It can also
+// filter by category. I would probably add an endpoint to count the total number of items, WIP
+// Query params:
+//   - category=<slug>: filter by category (optional)
+//   - start=<int>: starting index (0-based, default: 0)
+//   - end=<int>: ending index (exclusive, default: 16)
+//
+// Returns a paginated list of active products.
+//
+// TODO: add an endpoint for counting the available number of items, the repo already supports it
 func (pc *ProductController) ListProducts(ctx *echo.Context) error {
+	start := int32(0) // start at 0, obviously
+	end := int32(DefaultPaginationLimit)
+
+	if startParam := ctx.QueryParam("start"); startParam != "" {
+		if s, err := strconv.ParseInt(startParam, 10, 32); err == nil {
+			start = int32(s)
+		}
+	}
+
+	if endParam := ctx.QueryParam("end"); endParam != "" {
+		if e, err := strconv.ParseInt(endParam, 10, 32); err == nil && e > int64(start) {
+			end = int32(e)
+		}
+	}
+
 	categorySlug := ctx.QueryParam("category")
 
 	if categorySlug != "" {
-		products, err := pc.service.ListActiveProductsByCategorySlug(ctx.Request().Context(), categorySlug)
+		result, err := pc.service.ListActiveProductsPaginatedByCategory(ctx.Request().Context(), categorySlug, start, end)
 		if err != nil {
 			switch {
 			case errors.Is(err, ErrCategoryNotFound):
@@ -37,15 +62,16 @@ func (pc *ProductController) ListProducts(ctx *echo.Context) error {
 				return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to list products"))
 			}
 		}
-		return ctx.JSON(http.StatusOK, products)
+		return ctx.JSON(http.StatusOK, result)
+	} else {
+		result, err := pc.service.ListActiveProductsPaginated(ctx.Request().Context(), start, end)
+		if err != nil {
+			log.Errorf("Error listing products: %s", err.Error())
+			return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to list products"))
+		}
+		return ctx.JSON(http.StatusOK, result)
 	}
 
-	products, err := pc.service.ListActiveProducts(ctx.Request().Context())
-	if err != nil {
-		log.Errorf("Error listing products: %s", err.Error())
-		return ctx.JSON(http.StatusInternalServerError, response.NewError("internal_error", "failed to list products"))
-	}
-	return ctx.JSON(http.StatusOK, products)
 }
 
 // Returns a product by its slug, including inactive ones. So bookmarks etc dont appear as dead
