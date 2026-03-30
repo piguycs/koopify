@@ -17,10 +17,10 @@ pip install psycopg2
 3. Insert the products in the database
 ```sh
 # while still in the venv
-python3 insert_products.py
+python3 insert_products.py --csv gen1.csv
 ```
 4. Tag the products
 ```sh
 # while still in the venv
-python3 insert_categories.py
+python3 insert_categories.py --csv gen1.csv
 ```
