@@ -36,6 +36,11 @@ migrate-create seq:
 migrate-up:
     migrate -database $PGDB -path sql/migrations up
 
+[group("backend")]
+[working-directory: "backend"]
+migrate-down:
+    migrate -database $PGDB -path sql/migrations down
+
 [group("deploy")]
 run-db-container:
     docker run -p5432:5432 koopify-postgres
