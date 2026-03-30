@@ -124,9 +124,9 @@ func (r PGCheckoutRepository) UpdateOrderStatus(ctx context.Context, orderID int
 }
 
 func (r PGCheckoutRepository) UpdateOrderPaymentLink(ctx context.Context, orderID int64, paymentLink string) (*db.Order, error) {
-	order, err := r.queries.UpdateOrderAdyenReference(ctx, db.UpdateOrderAdyenReferenceParams{
-		ID:             orderID,
-		AdyenReference: pgtype.Text{String: paymentLink, Valid: paymentLink != ""},
+	order, err := r.queries.UpdateOrderPaymentLink(ctx, db.UpdateOrderPaymentLinkParams{
+		ID:               orderID,
+		AdyenPaymentLink: pgtype.Text{String: paymentLink, Valid: paymentLink != ""},
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

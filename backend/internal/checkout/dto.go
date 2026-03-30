@@ -28,6 +28,7 @@ type OrderResponse struct {
 	UserID             int64               `json:"userId"`
 	Status             string              `json:"status"`
 	TotalEurCents      int32               `json:"totalEurCents"`
+	AdyenPaymentLink   *string             `json:"adyenPaymentLink"`
 	AdyenReference     *string             `json:"adyenReference"`
 	AdyenSessionResult *string             `json:"adyenSessionResult"`
 	CreatedAt          time.Time           `json:"createdAt"`
@@ -71,11 +72,17 @@ func orderResponseFrom(order db.Order, items []db.OrderItem) OrderResponse {
 		adyenSessionResult = &order.AdyenSessionResult.String
 	}
 
+	var adyenPaymentLink *string
+	if order.AdyenPaymentLink.Valid {
+		adyenPaymentLink = &order.AdyenPaymentLink.String
+	}
+
 	return OrderResponse{
 		ID:                 order.ID,
 		UserID:             order.UserID,
 		Status:             order.Status,
 		TotalEurCents:      order.TotalEurCents,
+		AdyenPaymentLink:   adyenPaymentLink,
 		AdyenReference:     adyenRef,
 		AdyenSessionResult: adyenSessionResult,
 		CreatedAt:          order.CreatedAt.Time,
