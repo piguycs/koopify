@@ -144,15 +144,30 @@ func (q *Queries) CreateCategory(ctx context.Context, arg CreateCategoryParams) 
 }
 
 const createOrder = `-- name: CreateOrder :one
-insert into orders (user_id, status, total_eur_cents, adyen_reference, adyen_session_result)
-values ($1, $2, $3, $4, $5)
-returning id, user_id, status, total_eur_cents, adyen_reference, adyen_session_result, created_at, updated_at
+insert into orders (
+	user_id,
+	status,
+	total_eur_cents,
+	adyen_payment_link,
+	adyen_reference,
+	adyen_session_result
+) values ($1, $2, $3, $4, $5, $6)
+returning id,
+		  user_id,
+		  status,
+		  total_eur_cents,
+		  adyen_payment_link,
+		  adyen_reference,
+		  adyen_session_result,
+		  created_at,
+		  updated_at
 `
 
 type CreateOrderParams struct {
 	UserID             int64
 	Status             string
 	TotalEurCents      int32
+	AdyenPaymentLink   pgtype.Text
 	AdyenReference     pgtype.Text
 	AdyenSessionResult pgtype.Text
 }
@@ -163,6 +178,7 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order
 		arg.UserID,
 		arg.Status,
 		arg.TotalEurCents,
+		arg.AdyenPaymentLink,
 		arg.AdyenReference,
 		arg.AdyenSessionResult,
 	)
@@ -172,6 +188,7 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order
 		&i.UserID,
 		&i.Status,
 		&i.TotalEurCents,
+		&i.AdyenPaymentLink,
 		&i.AdyenReference,
 		&i.AdyenSessionResult,
 		&i.CreatedAt,
@@ -421,7 +438,15 @@ func (q *Queries) GetDeletionPolicy(ctx context.Context) (DeletionPolicy, error)
 }
 
 const getOrder = `-- name: GetOrder :one
-select id, user_id, status, total_eur_cents, adyen_reference, adyen_session_result, created_at, updated_at
+select id,
+	   user_id,
+	   status,
+	   total_eur_cents,
+	   adyen_payment_link,
+	   adyen_reference,
+	   adyen_session_result,
+	   created_at,
+	   updated_at
 from orders where id = $1 limit 1
 `
 
@@ -433,6 +458,7 @@ func (q *Queries) GetOrder(ctx context.Context, id int64) (Order, error) {
 		&i.UserID,
 		&i.Status,
 		&i.TotalEurCents,
+		&i.AdyenPaymentLink,
 		&i.AdyenReference,
 		&i.AdyenSessionResult,
 		&i.CreatedAt,
@@ -442,7 +468,7 @@ func (q *Queries) GetOrder(ctx context.Context, id int64) (Order, error) {
 }
 
 const getOrderByUser = `-- name: GetOrderByUser :one
-select id, user_id, status, total_eur_cents, adyen_reference, adyen_session_result, created_at, updated_at
+select id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at
 from orders where id = $1 and user_id = $2 limit 1
 `
 
@@ -459,6 +485,7 @@ func (q *Queries) GetOrderByUser(ctx context.Context, arg GetOrderByUserParams) 
 		&i.UserID,
 		&i.Status,
 		&i.TotalEurCents,
+		&i.AdyenPaymentLink,
 		&i.AdyenReference,
 		&i.AdyenSessionResult,
 		&i.CreatedAt,
@@ -649,7 +676,7 @@ func (q *Queries) GetUserWithEmail(ctx context.Context, email string) (User, err
 }
 
 const listAllOrders = `-- name: ListAllOrders :many
-select id, user_id, status, total_eur_cents, adyen_reference, adyen_session_result, created_at, updated_at
+select id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at
 from orders order by created_at desc
 `
 
@@ -668,6 +695,7 @@ func (q *Queries) ListAllOrders(ctx context.Context) ([]Order, error) {
 			&i.UserID,
 			&i.Status,
 			&i.TotalEurCents,
+			&i.AdyenPaymentLink,
 			&i.AdyenReference,
 			&i.AdyenSessionResult,
 			&i.CreatedAt,
@@ -925,7 +953,7 @@ func (q *Queries) ListOrderItems(ctx context.Context, orderID int64) ([]OrderIte
 }
 
 const listOrdersByUser = `-- name: ListOrdersByUser :many
-select id, user_id, status, total_eur_cents, adyen_reference, adyen_session_result, created_at, updated_at
+select id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at
 from orders where user_id = $1 order by created_at desc
 `
 
@@ -943,6 +971,7 @@ func (q *Queries) ListOrdersByUser(ctx context.Context, userID int64) ([]Order, 
 			&i.UserID,
 			&i.Status,
 			&i.TotalEurCents,
+			&i.AdyenPaymentLink,
 			&i.AdyenReference,
 			&i.AdyenSessionResult,
 			&i.CreatedAt,
@@ -1280,7 +1309,7 @@ func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) 
 const updateOrderAdyenReference = `-- name: UpdateOrderAdyenReference :one
 update orders set adyen_reference = $2, updated_at = now()
 where id = $1
-returning id, user_id, status, total_eur_cents, adyen_reference, adyen_session_result, created_at, updated_at
+returning id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at
 `
 
 type UpdateOrderAdyenReferenceParams struct {
@@ -1296,6 +1325,7 @@ func (q *Queries) UpdateOrderAdyenReference(ctx context.Context, arg UpdateOrder
 		&i.UserID,
 		&i.Status,
 		&i.TotalEurCents,
+		&i.AdyenPaymentLink,
 		&i.AdyenReference,
 		&i.AdyenSessionResult,
 		&i.CreatedAt,
@@ -1307,7 +1337,7 @@ func (q *Queries) UpdateOrderAdyenReference(ctx context.Context, arg UpdateOrder
 const updateOrderAdyenSession = `-- name: UpdateOrderAdyenSession :one
 update orders set adyen_reference = $2, adyen_session_result = $3, updated_at = now()
 where id = $1
-returning id, user_id, status, total_eur_cents, adyen_reference, adyen_session_result, created_at, updated_at
+returning id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at
 `
 
 type UpdateOrderAdyenSessionParams struct {
@@ -1324,6 +1354,35 @@ func (q *Queries) UpdateOrderAdyenSession(ctx context.Context, arg UpdateOrderAd
 		&i.UserID,
 		&i.Status,
 		&i.TotalEurCents,
+		&i.AdyenPaymentLink,
+		&i.AdyenReference,
+		&i.AdyenSessionResult,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateOrderPaymentLink = `-- name: UpdateOrderPaymentLink :one
+update orders set adyen_payment_link = $2, updated_at = now()
+where id = $1
+returning id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at
+`
+
+type UpdateOrderPaymentLinkParams struct {
+	ID               int64
+	AdyenPaymentLink pgtype.Text
+}
+
+func (q *Queries) UpdateOrderPaymentLink(ctx context.Context, arg UpdateOrderPaymentLinkParams) (Order, error) {
+	row := q.db.QueryRow(ctx, updateOrderPaymentLink, arg.ID, arg.AdyenPaymentLink)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Status,
+		&i.TotalEurCents,
+		&i.AdyenPaymentLink,
 		&i.AdyenReference,
 		&i.AdyenSessionResult,
 		&i.CreatedAt,
@@ -1335,7 +1394,7 @@ func (q *Queries) UpdateOrderAdyenSession(ctx context.Context, arg UpdateOrderAd
 const updateOrderStatus = `-- name: UpdateOrderStatus :one
 update orders set status = $2, updated_at = now()
 where id = $1
-returning id, user_id, status, total_eur_cents, adyen_reference, adyen_session_result, created_at, updated_at
+returning id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at
 `
 
 type UpdateOrderStatusParams struct {
@@ -1351,6 +1410,7 @@ func (q *Queries) UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusPa
 		&i.UserID,
 		&i.Status,
 		&i.TotalEurCents,
+		&i.AdyenPaymentLink,
 		&i.AdyenReference,
 		&i.AdyenSessionResult,
 		&i.CreatedAt,

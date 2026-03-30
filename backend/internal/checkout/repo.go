@@ -19,6 +19,7 @@ type CheckoutRepository interface {
 	ListOrdersByUser(ctx context.Context, userID int64) ([]db.Order, error)
 	ListAllOrders(ctx context.Context) ([]db.Order, error)
 	UpdateOrderStatus(ctx context.Context, orderID int64, status string) (*db.Order, error)
+	UpdateOrderPaymentLink(ctx context.Context, orderID int64, paymentLink string) (*db.Order, error)
 	UpdateOrderAdyenReference(ctx context.Context, orderID int64, adyenRef string) (*db.Order, error)
 	UpdateOrderAdyenSession(ctx context.Context, orderID int64, sessionId string, sessionResult string) (*db.Order, error)
 	DecrementProductInventory(ctx context.Context, productID int64, quantity int32) (*db.Product, error)
@@ -112,6 +113,20 @@ func (r PGCheckoutRepository) UpdateOrderStatus(ctx context.Context, orderID int
 	order, err := r.queries.UpdateOrderStatus(ctx, db.UpdateOrderStatusParams{
 		ID:     orderID,
 		Status: status,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrOrderNotFound
+		}
+		return nil, err
+	}
+	return &order, nil
+}
+
+func (r PGCheckoutRepository) UpdateOrderPaymentLink(ctx context.Context, orderID int64, paymentLink string) (*db.Order, error) {
+	order, err := r.queries.UpdateOrderAdyenReference(ctx, db.UpdateOrderAdyenReferenceParams{
+		ID:             orderID,
+		AdyenReference: pgtype.Text{String: paymentLink, Valid: paymentLink != ""},
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

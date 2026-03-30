@@ -303,41 +303,68 @@ order by c.name;
 
 -- Orders
 -- name: CreateOrder :one
-insert into orders (user_id, status, total_eur_cents, adyen_reference, adyen_session_result)
-values ($1, $2, $3, $4, $5)
-returning id, user_id, status, total_eur_cents, adyen_reference, adyen_session_result, created_at, updated_at;
+insert into orders (
+	user_id,
+	status,
+	total_eur_cents,
+	adyen_payment_link,
+	adyen_reference,
+	adyen_session_result
+) values ($1, $2, $3, $4, $5, $6)
+returning id,
+		  user_id,
+		  status,
+		  total_eur_cents,
+		  adyen_payment_link,
+		  adyen_reference,
+		  adyen_session_result,
+		  created_at,
+		  updated_at;
 
 -- name: GetOrder :one
-select id, user_id, status, total_eur_cents, adyen_reference, adyen_session_result, created_at, updated_at
+select id,
+	   user_id,
+	   status,
+	   total_eur_cents,
+	   adyen_payment_link,
+	   adyen_reference,
+	   adyen_session_result,
+	   created_at,
+	   updated_at
 from orders where id = $1 limit 1;
 
 -- name: GetOrderByUser :one
-select id, user_id, status, total_eur_cents, adyen_reference, adyen_session_result, created_at, updated_at
+select id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at
 from orders where id = $1 and user_id = $2 limit 1;
 
 -- name: ListOrdersByUser :many
-select id, user_id, status, total_eur_cents, adyen_reference, adyen_session_result, created_at, updated_at
+select id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at
 from orders where user_id = $1 order by created_at desc;
 
 -- Admin: List all orders
 -- name: ListAllOrders :many
-select id, user_id, status, total_eur_cents, adyen_reference, adyen_session_result, created_at, updated_at
+select id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at
 from orders order by created_at desc;
 
 -- name: UpdateOrderStatus :one
 update orders set status = $2, updated_at = now()
 where id = $1
-returning id, user_id, status, total_eur_cents, adyen_reference, adyen_session_result, created_at, updated_at;
+returning id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at;
+
+-- name: UpdateOrderPaymentLink :one
+update orders set adyen_payment_link = $2, updated_at = now()
+where id = $1
+returning id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at;
 
 -- name: UpdateOrderAdyenReference :one
 update orders set adyen_reference = $2, updated_at = now()
 where id = $1
-returning id, user_id, status, total_eur_cents, adyen_reference, adyen_session_result, created_at, updated_at;
+returning id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at;
 
 -- name: UpdateOrderAdyenSession :one
 update orders set adyen_reference = $2, adyen_session_result = $3, updated_at = now()
 where id = $1
-returning id, user_id, status, total_eur_cents, adyen_reference, adyen_session_result, created_at, updated_at;
+returning id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at;
 
 -- name: CreateOrderItem :one
 insert into order_items (order_id, product_id, product_name, quantity, unit_price_cents)

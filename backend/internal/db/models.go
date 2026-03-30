@@ -26,6 +26,7 @@ type Order struct {
 	UserID             int64
 	Status             string
 	TotalEurCents      int32
+	AdyenPaymentLink   pgtype.Text
 	AdyenReference     pgtype.Text
 	AdyenSessionResult pgtype.Text
 	CreatedAt          pgtype.Timestamptz

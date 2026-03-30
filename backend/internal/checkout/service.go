@@ -123,6 +123,16 @@ func (s *CheckoutService) CreateCheckoutSession(
 		return nil, fmt.Errorf("failed to create adyen session: %w", err)
 	}
 
+	orderOld := *order
+	order, err = s.repo.UpdateOrderPaymentLink(ctx, order.ID, checkoutURL)
+	if err != nil {
+		// not a hard error condition, but it means the user cannot retry the order
+		// I think this is fine, not sure how I can recover it. It is unlikely the user will actually lose
+		// the checkoutURL after the frontend redirects them
+		log.Error("Unable to update the database with the payment link", "error", err)
+		order = &orderOld
+	}
+
 	items, err := s.repo.ListOrderItems(ctx, order.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch order items: %w", err)
@@ -283,7 +293,12 @@ func (s *CheckoutService) pollPendingOrders(
 	return res.Status, nil
 }
 
-func (s *CheckoutService) createAdyenSession(ctx context.Context, orderID int64, amount int32) (string, error) {
+// Returns just the URL, everything else is sort of irrelevant to our checkout flow
+func (s *CheckoutService) createAdyenSession(
+	ctx context.Context,
+	orderID int64,
+	amount int32,
+) (string, error) {
 	service := s.adyenClient.Checkout()
 
 	amountEur := adyen_checkout.Amount{
