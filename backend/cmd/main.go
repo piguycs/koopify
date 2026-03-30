@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"os"
 
 	"github.com/charmbracelet/log"
@@ -28,6 +29,8 @@ func main() {
 	validator := internal.NewCustomValidator()
 	e.Validator = &validator
 
+	charmLogHandler := log.New(os.Stderr)
+	e.Logger = slog.New(charmLogHandler)
 	e.Use(middleware.RequestLogger())
 	// this API should be available for standalone use
 	e.Use(middleware.CORS("*"))
