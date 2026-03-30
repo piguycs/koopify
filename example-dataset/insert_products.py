@@ -62,7 +62,7 @@ def main():
 
     conn_str = (
         args.db
-        or os.environ.get("DATABASE_URL")
+        or os.environ.get("PGDB")
         or input("PostgreSQL connection string: ").strip()
     )
 
