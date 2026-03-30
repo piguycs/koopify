@@ -99,10 +99,7 @@ const deletionActionLabel = computed(() =>
 )
 
 async function handleDeletionAction() {
-    if (isDeleting.value) {
-        return
-    }
-
+    if (isDeleting.value) return
     clearValues()
     isDeleting.value = true
 
@@ -178,6 +175,15 @@ function formatDate(dateStr: string): string {
 
 function formatStatus(status: string): string {
     return status.charAt(0).toUpperCase() + status.slice(1)
+}
+
+function canCompleteOrder(order: OrderResponse): boolean {
+    return order.status === 'pending' && order.adyenPaymentLink != null;
+}
+
+function completeOrder(order: OrderResponse) {
+    if (!order.adyenPaymentLink) return;
+    window.location.href = order.adyenPaymentLink
 }
 
 async function loadOrders() {
@@ -287,6 +293,14 @@ onMounted(() => {
                                     <span :class="['status-badge', order.status]">
                                         {{ formatStatus(order.status) }}
                                     </span>
+                                    <Button
+                                        size="tiny"
+                                        variant="danger"
+                                        v-if="canCompleteOrder(order)"
+                                        @click="completeOrder(order)"
+                                    >
+                                        COMPLETE THE PAYMENT
+                                    </Button>
                                 </div>
                                 <div class="order-meta">
                                     <span class="order-total">{{

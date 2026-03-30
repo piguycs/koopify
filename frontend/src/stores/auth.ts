@@ -1,3 +1,8 @@
+//! Over time, this module devoulved into "Auth + Authenticated API client"
+//! I could do something to fix this, but if I kept fixing every little issue I had with this
+//! project, I would end up making my own web browser using my own protocol running my own kernel
+//! drivers for handling that protocol. And it will all be written in Rust, so it will take 15 years
+
 import { defineStore } from "pinia"
 import { apiClient, ApiError } from "@/api/client"
 
@@ -32,6 +37,7 @@ export type OrderResponse = {
     userId: number
     status: string
     totalEurCents: number
+    adyenPaymentLink: string | null
     adyenReference: string | null
     createdAt: string
     updatedAt: string

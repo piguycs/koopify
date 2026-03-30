@@ -1,7 +1,7 @@
 <script setup lang="ts">
 interface Props {
     variant?: "primary" | "ghost" | "danger" | "link"
-    size?: "default" | "small"
+    size?: "default" | "small" | "tiny"
     disabled?: boolean
     loading?: boolean
     type?: "button" | "submit" | "reset"
@@ -62,6 +62,13 @@ button.small {
     padding: 6px 10px;
     font-size: 12px;
     min-height: 30px;
+}
+
+button.tiny {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 10px;
+    /* border-radius: 2px; */
 }
 
 button.primary {
