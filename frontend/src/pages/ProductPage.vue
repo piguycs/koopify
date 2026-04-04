@@ -159,9 +159,6 @@ onMounted(() => {
                         ]"
                     ></span>
                     {{ isInStock(product) ? "In Stock" : "Out of Stock" }}
-                    <span v-if="product.inStock" class="stock-count">
-                        ({{ inventoryCount(product) }} available)
-                    </span>
                 </div>
 
                 <div class="add-to-cart-section" v-if="showBtnSection(product)">
@@ -181,11 +178,6 @@ onMounted(() => {
                         >
                             +
                         </button>
-                    </div>
-
-                    <div v-if="currentCartQty > 0" class="cart-qty-info">
-                        {{ isAtCartMax ? "Max quantity in cart" : `${currentCartQty} in cart` }}
-                        <span v-if="!isAtCartMax"> ({{ maxAddableQty }} more available) </span>
                     </div>
 
                     <Button
