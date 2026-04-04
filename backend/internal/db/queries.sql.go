@@ -1534,3 +1534,30 @@ func (q *Queries) UpdateUserAdmin(ctx context.Context, arg UpdateUserAdminParams
 	)
 	return i, err
 }
+
+const updateUserPassword = `-- name: UpdateUserPassword :one
+update users
+set password = $2
+where id = $1
+returning id, email, display_name, password, admin, requested_deletion_at, deletion_scheduled_at
+`
+
+type UpdateUserPasswordParams struct {
+	ID       int64
+	Password string
+}
+
+func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUserPassword, arg.ID, arg.Password)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.DisplayName,
+		&i.Password,
+		&i.Admin,
+		&i.RequestedDeletionAt,
+		&i.DeletionScheduledAt,
+	)
+	return i, err
+}

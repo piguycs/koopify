@@ -21,6 +21,7 @@ type LoginUserRequest struct {
 type UpdateUserRequest struct {
 	DisplayName *string `json:"displayName" validate:"omitempty,lte=64,gte=4"`
 	Email       *string `json:"email" validate:"omitempty,lte=128,email"`
+	Password    *string `json:"password" validate:"omitempty,lte=72,gte=8"`
 }
 
 type UserResponse struct {

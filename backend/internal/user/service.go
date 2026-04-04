@@ -43,17 +43,41 @@ func (us *UserService) UpdateCurrentUser(
 		return nil, err
 	}
 
+	// skip updating non password fields if they have not been changed
+	// I wanted to make the password update field be part of the same PATCH interface as other fields
+	// therefore this little hack. As I do not wish for password updating to be part of the patch functions
+	// in the backend. Therefore the two `UpdateUser` and `UpdateUserPassword` fns
+	nonPasswdChanged := false
+
 	newDisplayName := currentUser.DisplayName
 	if update.DisplayName != nil {
+		nonPasswdChanged = true
 		newDisplayName = *update.DisplayName
 	}
 
 	newEmail := currentUser.Email
 	if update.Email != nil {
+		nonPasswdChanged = true
 		newEmail = *update.Email
 	}
 
-	return us.repository.UpdateUser(ctx, userID, newDisplayName, newEmail)
+	// this is so hacky that I forgot how to declare typed variables in Go lmao
+	// for a moment muscle memory kicked in and I did `let user: UserResponse`
+	var user *UserResponse = nil
+	if update.Password != nil {
+		user, err = us.repository.UpdateUserPassword(ctx, userID, *update.Password)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if nonPasswdChanged {
+		return us.repository.UpdateUser(ctx, userID, newDisplayName, newEmail)
+	} else {
+		// just return the password's return value here
+		return user, nil
+	}
+
 }
 
 func (us *UserService) RequestDeletion(ctx context.Context, userID int64) (*UserResponse, error) {

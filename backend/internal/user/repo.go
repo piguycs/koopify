@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
@@ -19,6 +20,7 @@ type UserRepository interface {
 	GetUserByID(ctx context.Context, id int64) (*UserResponse, error)
 	ListUsers(ctx context.Context) ([]UserResponse, error)
 	UpdateUser(ctx context.Context, id int64, displayName string, email string) (*UserResponse, error)
+	UpdateUserPassword(ctx context.Context, id int64, password string) (*UserResponse, error)
 	UpdateUserAdmin(ctx context.Context, id int64, admin bool) (*UserResponse, error)
 	GetDeletionPolicy(ctx context.Context) (int32, error)
 	RequestUserDeletion(ctx context.Context, id int64, delayHours int32) (*UserResponse, error)
@@ -121,6 +123,34 @@ func (pgur PGUserRepository) UpdateUser(
 	}
 
 	dbUser, err := pgur.queries.UpdateUser(ctx, params)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == PG_UNIQUE_VIOLATION {
+			return nil, ErrUserExists
+		}
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	userResp := UserResponseFrom(dbUser)
+	return &userResp, nil
+}
+
+func (pgur PGUserRepository) UpdateUserPassword(ctx context.Context, id int64, password string) (*UserResponse, error) {
+	hashedPassword, err := hashFn(password)
+	if err != nil {
+		log.Error("Unable to run hashFn on password due to", "error", err)
+		return nil, err
+	}
+
+	params := db.UpdateUserPasswordParams{
+		ID:       id,
+		Password: hashedPassword,
+	}
+
+	dbUser, err := pgur.queries.UpdateUserPassword(ctx, params)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == PG_UNIQUE_VIOLATION {

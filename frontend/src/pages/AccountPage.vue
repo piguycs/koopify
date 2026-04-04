@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from "vue"
 import { useRouter } from "vue-router"
-import { useAuthStore, type OrderResponse } from "@/stores/auth"
+import { useAuthStore, type OrderResponse, type UpdateUserPayload } from "@/stores/auth"
 import AppLayout from "@/layouts/AppLayout.vue"
 import AccountCard from "@/components/AccountCard.vue"
 import EditableField from "@/components/EditableField.vue"
@@ -46,7 +46,7 @@ function apiError(err: unknown, message: string) {
     }
 }
 
-async function saveField(payload: { displayName?: string; email?: string }, success: string) {
+async function saveField(payload: UpdateUserPayload, success: string) {
     if (isSaving.value) {
         return
     }
@@ -64,12 +64,9 @@ async function saveField(payload: { displayName?: string; email?: string }, succ
     }
 }
 
-const saveDisplayName = (value: string) =>
-    value !== currentUser.value?.displayName &&
-    saveField({ displayName: value }, "Display name updated.")
-
-const saveEmail = (value: string) =>
-    value !== currentUser.value?.email && saveField({ email: value }, "Email updated.")
+const saveDisplayName = (value: string) => saveField({ displayName: value }, "Display name updated.")
+const saveEmail = (value: string) => saveField({ email: value }, "Email updated.")
+const savePassword = (value: string) => saveField({ password: value }, "Password updated")
 
 const deletionScheduledAt = computed(() => {
     const value = authStore.currentUser?.deletionScheduledAt
@@ -202,9 +199,8 @@ async function loadOrders() {
     }
 }
 
-onMounted(() => {
-    loadOrders()
-})
+onMounted(loadOrders)
+
 </script>
 
 <template>
@@ -251,6 +247,7 @@ onMounted(() => {
                         @save="saveDisplayName"
                     />
                     <EditableField label="Email" :value="userEmail" @save="saveEmail" />
+                    <EditableField label="Password" sensitive @save="savePassword" />
                     <ActionCard
                         title="Reset password"
                         description="WIP: Password reset flow is not wired yet."

@@ -20,6 +20,12 @@ set display_name = $2,
 where id = $1
 returning id, email, display_name, password, admin, requested_deletion_at, deletion_scheduled_at;
 
+-- name: UpdateUserPassword :one
+update users
+set password = $2
+where id = $1
+returning id, email, display_name, password, admin, requested_deletion_at, deletion_scheduled_at;
+
 -- name: DeleteUser :exec
 delete from users
     where id = $1;

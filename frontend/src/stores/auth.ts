@@ -22,6 +22,7 @@ type LoginResponse = {
 export type UpdateUserPayload = {
     displayName?: string
     email?: string
+    password?: string
 }
 
 export type OrderItemResponse = {

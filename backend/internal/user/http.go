@@ -164,7 +164,7 @@ func (uc *UserController) UpdateCurrentUser(ctx *echo.Context) error {
 		return err
 	}
 
-	if update.DisplayName == nil && update.Email == nil {
+	if update.DisplayName == nil && update.Email == nil && update.Password == nil {
 		return ctx.JSON(http.StatusBadRequest, response.NewError("invalid_request", "provide at least one field to update"))
 	}
 

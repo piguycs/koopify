@@ -6,19 +6,24 @@ interface Props {
     label: string
     value?: string | null
     type?: string
+    sensitive?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
     value: null,
     type: "text",
+    sensitive: false,
 })
 
 const emit = defineEmits<{
     save: [value: string]
 }>()
 
+const HIDDEN_VALUE = "********"
+
 const editing = ref(false)
 const localValue = ref<string | null>(null)
+const initialValue = ref<string | null>(null)
 
 watch(
     () => props.value,
@@ -28,8 +33,11 @@ watch(
     { immediate: true },
 )
 
+const displayValue = () => (props.sensitive ? HIDDEN_VALUE : props.value || "—")
+
 const startEdit = () => {
-    localValue.value = props.value
+    initialValue.value = displayValue()
+    localValue.value = props.sensitive ? null : props.value
     editing.value = true
 }
 
@@ -39,8 +47,9 @@ const cancelEdit = () => {
 }
 
 const save = () => {
-    if (localValue.value) {
-        emit("save", localValue.value.trim())
+    const currentValue = localValue.value?.trim() ?? ""
+    if (currentValue && currentValue !== initialValue.value) {
+        emit("save", currentValue)
     }
 
     editing.value = false
@@ -52,7 +61,7 @@ const save = () => {
         <span class="label">{{ label }}</span>
         <div class="detail-value">
             <span v-if="!editing" class="value">
-                {{ value || "—" }}
+                {{ displayValue() }}
             </span>
             <input
                 v-else
