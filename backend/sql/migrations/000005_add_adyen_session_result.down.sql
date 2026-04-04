@@ -1,1 +1,1 @@
-ALTER TABLE orders DROP COLUMN adyen_session_result;
+alter table orders drop column adyen_session_result;

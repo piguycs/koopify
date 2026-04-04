@@ -1,1 +1,1 @@
-ALTER TABLE orders ADD COLUMN adyen_payment_link varchar;
+alter table orders add column adyen_payment_link varchar;

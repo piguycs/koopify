@@ -1,1 +1,1 @@
-ALTER TABLE orders ADD COLUMN adyen_session_result varchar;
+alter table orders add column adyen_session_result varchar;

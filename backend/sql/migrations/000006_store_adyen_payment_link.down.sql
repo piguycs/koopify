@@ -1,1 +1,1 @@
-ALTER TABLE orders DROP COLUMN adyen_payment_link;
+alter table orders drop column adyen_payment_link;
