@@ -36,6 +36,11 @@ type OrderResponse struct {
 	Items              []OrderItemResponse `json:"items"`
 }
 
+type AdyenSessionResponse struct {
+	reference string
+	url       string
+}
+
 type UpdateAdyenSessionRequest struct {
 	SessionId     string `json:"sessionId" validate:"required"`
 	SessionResult string `json:"sessionResult" validate:"required"`

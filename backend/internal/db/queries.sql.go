@@ -1364,18 +1364,19 @@ func (q *Queries) UpdateOrderAdyenSession(ctx context.Context, arg UpdateOrderAd
 }
 
 const updateOrderPaymentLink = `-- name: UpdateOrderPaymentLink :one
-update orders set adyen_payment_link = $2, updated_at = now()
+update orders set adyen_reference = $2, adyen_payment_link = $3, updated_at = now()
 where id = $1
 returning id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at
 `
 
 type UpdateOrderPaymentLinkParams struct {
 	ID               int64
+	AdyenReference   pgtype.Text
 	AdyenPaymentLink pgtype.Text
 }
 
 func (q *Queries) UpdateOrderPaymentLink(ctx context.Context, arg UpdateOrderPaymentLinkParams) (Order, error) {
-	row := q.db.QueryRow(ctx, updateOrderPaymentLink, arg.ID, arg.AdyenPaymentLink)
+	row := q.db.QueryRow(ctx, updateOrderPaymentLink, arg.ID, arg.AdyenReference, arg.AdyenPaymentLink)
 	var i Order
 	err := row.Scan(
 		&i.ID,

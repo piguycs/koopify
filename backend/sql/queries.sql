@@ -358,7 +358,7 @@ where id = $1
 returning id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at;
 
 -- name: UpdateOrderPaymentLink :one
-update orders set adyen_payment_link = $2, updated_at = now()
+update orders set adyen_reference = $2, adyen_payment_link = $3, updated_at = now()
 where id = $1
 returning id, user_id, status, total_eur_cents, adyen_payment_link, adyen_reference, adyen_session_result, created_at, updated_at;
 

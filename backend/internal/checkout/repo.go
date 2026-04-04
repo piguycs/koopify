@@ -19,7 +19,7 @@ type CheckoutRepository interface {
 	ListOrdersByUser(ctx context.Context, userID int64) ([]db.Order, error)
 	ListAllOrders(ctx context.Context) ([]db.Order, error)
 	UpdateOrderStatus(ctx context.Context, orderID int64, status string) (*db.Order, error)
-	UpdateOrderPaymentLink(ctx context.Context, orderID int64, paymentLink string) (*db.Order, error)
+	UpdateOrderPaymentLink(ctx context.Context, orderID int64, adyen AdyenSessionResponse) (*db.Order, error)
 	UpdateOrderAdyenReference(ctx context.Context, orderID int64, adyenRef string) (*db.Order, error)
 	UpdateOrderAdyenSession(ctx context.Context, orderID int64, sessionId string, sessionResult string) (*db.Order, error)
 	DecrementProductInventory(ctx context.Context, productID int64, quantity int32) (*db.Product, error)
@@ -123,10 +123,15 @@ func (r PGCheckoutRepository) UpdateOrderStatus(ctx context.Context, orderID int
 	return &order, nil
 }
 
-func (r PGCheckoutRepository) UpdateOrderPaymentLink(ctx context.Context, orderID int64, paymentLink string) (*db.Order, error) {
+func toPgText(t string) pgtype.Text {
+	return pgtype.Text{String: t, Valid: t != ""}
+}
+
+func (r PGCheckoutRepository) UpdateOrderPaymentLink(ctx context.Context, orderID int64, resp AdyenSessionResponse) (*db.Order, error) {
 	order, err := r.queries.UpdateOrderPaymentLink(ctx, db.UpdateOrderPaymentLinkParams{
 		ID:               orderID,
-		AdyenPaymentLink: pgtype.Text{String: paymentLink, Valid: paymentLink != ""},
+		AdyenReference:   toPgText(resp.reference),
+		AdyenPaymentLink: toPgText(resp.url),
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

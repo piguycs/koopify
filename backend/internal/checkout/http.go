@@ -136,6 +136,17 @@ func (cc *CheckoutController) UpdateOrderAdyenSession(ctx *echo.Context) error {
 		return ctx.JSON(http.StatusForbidden, response.NewError("forbidden", "you do not own this order"))
 	}
 
+	// Without this, the user could
+	// Step 1: Make a successful payment
+	// Step 2: Initiate a second checkout
+	// Step 3: Use the order id from the second checkout in the redirected URL for the successful payment
+	//     eg: change orderId=A to orderId=B in the "payment successes" page that adyen redirects to
+	// Step 4: The second order gets marked as completed in the backend.
+	// This bug is called IDOR, and it was identified when I asked one if my friends to break my website
+	if *order.AdyenReference != req.SessionId {
+		return ctx.JSON(http.StatusBadRequest, response.NewError("user_idor", "The session ID is invalid"))
+	}
+
 	updatedOrder, err := cc.service.UpdateOrderAdyenSession(ctx.Request().Context(), orderID, req.SessionId, req.SessionResult)
 	if err != nil {
 		log.Errorf("Error updating adyen session for order %d: %s", orderID, err.Error())

@@ -118,13 +118,13 @@ func (s *CheckoutService) CreateCheckoutSession(
 		}
 	}
 
-	checkoutURL, err := s.createAdyenSession(ctx, order.ID, totalPrice)
+	checkoutResp, err := s.createAdyenSession(ctx, order.ID, totalPrice)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create adyen session: %w", err)
 	}
 
 	orderOld := *order
-	order, err = s.repo.UpdateOrderPaymentLink(ctx, order.ID, checkoutURL)
+	order, err = s.repo.UpdateOrderPaymentLink(ctx, order.ID, *checkoutResp)
 	if err != nil {
 		// not a hard error condition, but it means the user cannot retry the order
 		// I think this is fine, not sure how I can recover it. It is unlikely the user will actually lose
@@ -140,7 +140,7 @@ func (s *CheckoutService) CreateCheckoutSession(
 
 	return &CheckoutSessionResponse{
 		Order:            orderResponseFrom(*order, items),
-		AdyenCheckoutURL: checkoutURL,
+		AdyenCheckoutURL: order.AdyenPaymentLink.String,
 	}, nil
 }
 
@@ -298,7 +298,7 @@ func (s *CheckoutService) createAdyenSession(
 	ctx context.Context,
 	orderID int64,
 	amount int32,
-) (string, error) {
+) (*AdyenSessionResponse, error) {
 	service := s.adyenClient.Checkout()
 
 	amountEur := adyen_checkout.Amount{
@@ -328,13 +328,17 @@ func (s *CheckoutService) createAdyenSession(
 
 	if err != nil {
 		log.Error("Could not complete adyen request", "error", err)
-		return "", ErrCheckoutCreationFailed
+		return nil, ErrCheckoutCreationFailed
 	}
 
 	if res.Url == nil || *res.Url == "" {
 		log.Error("adyen's response url was empty")
-		return "", ErrCheckoutCreationFailed
+		return nil, ErrCheckoutCreationFailed
 	}
 
-	return *res.Url, nil
+	resp := AdyenSessionResponse{
+		reference: res.Id,
+		url:       *res.Url,
+	}
+	return &resp, nil
 }
