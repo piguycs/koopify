@@ -24,8 +24,7 @@ func LoadConfig() (Config, error) {
 	pgdb := GetEnvDefault("PGDB", DefaultPgDb)
 	hostAddr := GetEnvDefault("HOST_ADDR", DefaultHostAddr)
 
-	var jwtSecret, adyenApiKey, adyenMerchantAccount, adyenThemeId, checkoutReturnUrl,
-		resendApiKey, sendingEmailAddress string
+	var jwtSecret, adyenApiKey, adyenMerchantAccount, adyenThemeId, checkoutReturnUrl string
 
 	err := GetEnvs([]EnvVarDef{
 		{Value: &jwtSecret, Var: "JWT_SECRET"},
@@ -33,8 +32,6 @@ func LoadConfig() (Config, error) {
 		{Value: &adyenMerchantAccount, Var: "ADYEN_MERCHANT_ACCOUNT"},
 		{Value: &adyenThemeId, Var: "ADYEN_THEME_ID"},
 		{Value: &checkoutReturnUrl, Var: "CHECKOUT_RETURN_URL"},
-		{Value: &resendApiKey, Var: "RESEND_API_KEY"},
-		{Value: &sendingEmailAddress, Var: "SENDING_EMAIL_ADDRESS"},
 	})
 
 	if err != nil {
