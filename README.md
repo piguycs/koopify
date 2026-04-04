@@ -41,6 +41,12 @@ user admin, if the Web UI is not accessible. The first user to sign up on the
 website also becomes an admin. This was added so that you can demo the website
 as an admin, even without access to a postgresql or a bash shell.
 
+There is one missing feature however, difficult to add it in a project meant
+for a one-off demo. For production, I would have set up a cron job to run every
+midnight to purge user records which are past the deletion deadline. Batching
+keeps the system efficient, and allows some room for undoing an accidental
+deletion.
+
 ## Environment variables
 
 ### Backend (API)
