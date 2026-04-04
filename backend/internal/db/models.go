@@ -43,6 +43,13 @@ type OrderItem struct {
 	CreatedAt      pgtype.Timestamptz
 }
 
+type PasswordReset struct {
+	ID         int64
+	UserID     int64
+	ResetToken string
+	CreatedAt  pgtype.Timestamptz
+}
+
 type Product struct {
 	ID              int64
 	Name            string
