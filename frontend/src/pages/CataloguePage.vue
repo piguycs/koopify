@@ -116,7 +116,7 @@ watch(selectedCategory, () => {
         <section class="page-header">
             <div class="header-content">
                 <h1>Catalogue</h1>
-                <p>Browse packs, singles, and curated drops.</p>
+                <p>Best in class gen 1 pokemon cards (they are totally real)</p>
             </div>
         </section>
 
