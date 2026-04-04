@@ -44,7 +44,7 @@ function getDiscountedPrice(priceCents: number, discountPercent: number | null):
 function addToCart() {
     if (!product.value || !product.value.inStock) return
     cartStore.addItem(product.value, quantity.value)
-    router.push("/cart")
+    // router.push("/cart")
 }
 
 function gotoModifyProduct() {
