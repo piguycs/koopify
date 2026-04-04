@@ -249,12 +249,6 @@ onMounted(loadOrders)
                     <EditableField label="Email" :value="userEmail" @save="saveEmail" />
                     <EditableField label="Password" sensitive @save="savePassword" />
                     <ActionCard
-                        title="Reset password"
-                        description="WIP: Password reset flow is not wired yet."
-                        button-text="Reset password"
-                        @click="console.info('WIP: password reset')"
-                    />
-                    <ActionCard
                         title="Delete account"
                         :description="deletionDescription"
                         :button-text="deletionActionLabel"
