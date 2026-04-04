@@ -64,7 +64,8 @@ async function saveField(payload: UpdateUserPayload, success: string) {
     }
 }
 
-const saveDisplayName = (value: string) => saveField({ displayName: value }, "Display name updated.")
+const saveDisplayName = (value: string) =>
+    saveField({ displayName: value }, "Display name updated.")
 const saveEmail = (value: string) => saveField({ email: value }, "Email updated.")
 const savePassword = (value: string) => saveField({ password: value }, "Password updated")
 
@@ -175,11 +176,11 @@ function formatStatus(status: string): string {
 }
 
 function canCompleteOrder(order: OrderResponse): boolean {
-    return order.status === 'pending' && order.adyenPaymentLink != null;
+    return order.status === "pending" && order.adyenPaymentLink != null
 }
 
 function completeOrder(order: OrderResponse) {
-    if (!order.adyenPaymentLink) return;
+    if (!order.adyenPaymentLink) return
     window.location.href = order.adyenPaymentLink
 }
 
@@ -200,7 +201,6 @@ async function loadOrders() {
 }
 
 onMounted(loadOrders)
-
 </script>
 
 <template>

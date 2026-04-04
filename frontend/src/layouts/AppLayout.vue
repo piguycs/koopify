@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from "vue"
+import { onMounted, ref, watch } from "vue"
 import { RouterLink, useRouter } from "vue-router"
 import { useAuthStore } from "@/stores/auth"
 import { useCartStore } from "@/stores/cart"
@@ -8,6 +8,17 @@ import Button from "@/components/Button.vue"
 const authStore = useAuthStore()
 const cartStore = useCartStore()
 const router = useRouter()
+const cartPulsing = ref(false)
+
+watch(
+    () => cartStore.pulseTrigger,
+    () => {
+        cartPulsing.value = true
+        setTimeout(() => {
+            cartPulsing.value = false
+        }, 300)
+    },
+)
 
 const handleSignOut = () => {
     authStore.signOut()
@@ -48,7 +59,7 @@ onMounted(async () => {
                     </div>
                 </template>
                 <RouterLink to="/cart">
-                    <Button variant="primary" type="button">
+                    <Button variant="primary" type="button" :class="{ pulse: cartPulsing }">
                         Cart ({{ cartStore.totalItems }})
                     </Button>
                 </RouterLink>
@@ -84,12 +95,16 @@ onMounted(async () => {
 }
 
 .nav {
+    position: sticky;
+    top: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 24px 8vw;
     border-bottom: 1px solid var(--border);
-    background: rgba(13, 12, 11, 0.92);
+    background: rgba(13, 12, 11, 0.85);
+    backdrop-filter: blur(12px);
+    z-index: 100;
 }
 
 .logo {
@@ -234,5 +249,22 @@ onMounted(async () => {
     .content {
         padding: 24px 6vw 56px;
     }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+        box-shadow: 0 0 12px rgba(245, 140, 70, 0.6);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.pulse {
+    animation: pulse 0.3s ease-out;
 }
 </style>

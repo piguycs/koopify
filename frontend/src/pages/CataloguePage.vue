@@ -211,10 +211,10 @@ watch(selectedCategory, () => {
                             <Button
                                 variant="primary"
                                 size="small"
-                                :disabled="!product.inStock"
+                                :disabled="!product.inStock || cartStore.isAtMax(product.id)"
                                 @click="addToCart(product)"
                             >
-                                Add
+                                {{ cartStore.isAtMax(product.id) ? "Max" : "Add" }}
                             </Button>
                         </div>
                     </div>

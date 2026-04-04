@@ -61,7 +61,7 @@ async function refreshOrderStatus(orderId: number) {
     pollingOrderId.value = orderId
     try {
         const updatedOrder = await authStore.pollOrder(orderId)
-        const index = orders.value.findIndex((o) => o.id === orderId)
+        const index = orders.value.findIndex(o => o.id === orderId)
         if (index !== -1) {
             orders.value[index] = updatedOrder
         }
@@ -73,7 +73,6 @@ async function refreshOrderStatus(orderId: number) {
                 // errorMessage.value = "HI"
             } else {
                 errorMessage.value = err.message
-
             }
         } else {
             errorMessage.value = "Failed to refresh order status"

@@ -25,6 +25,7 @@ function loadFromStorage(): CartItemData[] {
 export const useCartStore = defineStore("cart", {
     state: () => ({
         items: loadFromStorage() as CartItemData[],
+        pulseTrigger: 0,
     }),
     getters: {
         totalItems: state => state.items.reduce((sum, item) => sum + item.quantity, 0),
@@ -53,6 +54,7 @@ export const useCartStore = defineStore("cart", {
                 })
             }
             this.persistToStorage()
+            this.pulseTrigger++
         },
         removeItem(productId: number) {
             const index = this.items.findIndex(item => item.id === productId)
@@ -76,10 +78,12 @@ export const useCartStore = defineStore("cart", {
             this.items = []
             this.persistToStorage()
         },
-        // need to accept a function parameter
         getItemQuantity(productId: number): number {
             const item = this.items.find(item => item.id === productId)
             return item?.quantity ?? 0
+        },
+        isAtMax(productId: number): boolean {
+            return this.getItemQuantity(productId) >= 10
         },
         persistToStorage() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(this.items))

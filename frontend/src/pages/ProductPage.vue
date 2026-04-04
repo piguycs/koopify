@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue"
+import { ref, computed, onMounted } from "vue"
 import { useRoute, useRouter, RouterLink } from "vue-router"
 import AppLayout from "@/layouts/AppLayout.vue"
 import Button from "@/components/Button.vue"
@@ -19,6 +19,12 @@ const errorMessage = ref("")
 const quantity = ref(1)
 
 const slug = route.params.slug as string
+
+const currentCartQty = computed(() =>
+    product.value ? cartStore.getItemQuantity(product.value.id) : 0,
+)
+const maxAddableQty = computed(() => Math.max(0, 10 - currentCartQty.value))
+const isAtCartMax = computed(() => currentCartQty.value >= 10)
 
 async function loadProduct() {
     isLoading.value = true
@@ -43,8 +49,9 @@ function getDiscountedPrice(priceCents: number, discountPercent: number | null):
 
 function addToCart() {
     if (!product.value || !product.value.inStock) return
-    cartStore.addItem(product.value, quantity.value)
-    // router.push("/cart")
+    const qtyToAdd = Math.min(quantity.value, maxAddableQty.value)
+    if (qtyToAdd <= 0) return
+    cartStore.addItem(product.value, qtyToAdd)
 }
 
 function gotoModifyProduct() {
@@ -56,7 +63,7 @@ function gotoModifyProduct() {
 }
 
 function incrementQuantity() {
-    if (product.value && quantity.value < 10) {
+    if (product.value && quantity.value < maxAddableQty.value) {
         quantity.value++
     }
 }
@@ -146,7 +153,10 @@ onMounted(() => {
 
                 <div class="stock-status">
                     <span
-                        :class="['stock-indicator', isInStock(product) ? 'in-stock' : 'out-of-stock']"
+                        :class="[
+                            'stock-indicator',
+                            isInStock(product) ? 'in-stock' : 'out-of-stock',
+                        ]"
                     ></span>
                     {{ isInStock(product) ? "In Stock" : "Out of Stock" }}
                     <span v-if="product.inStock" class="stock-count">
@@ -155,7 +165,7 @@ onMounted(() => {
                 </div>
 
                 <div class="add-to-cart-section" v-if="showBtnSection(product)">
-                    <div v-if="isInStock(product)" class="quantity-selector">
+                    <div v-if="isInStock(product) && !isAtCartMax" class="quantity-selector">
                         <button
                             class="qty-btn"
                             @click="decrementQuantity"
@@ -167,13 +177,25 @@ onMounted(() => {
                         <button
                             class="qty-btn"
                             @click="incrementQuantity"
-                            :disabled="quantity >= 10"
+                            :disabled="quantity >= maxAddableQty || isAtCartMax"
                         >
                             +
                         </button>
                     </div>
 
-                    <Button v-if="isInStock(product)" variant="primary" @click="addToCart"> Add to Cart </Button>
+                    <div v-if="currentCartQty > 0" class="cart-qty-info">
+                        {{ isAtCartMax ? "Max quantity in cart" : `${currentCartQty} in cart` }}
+                        <span v-if="!isAtCartMax"> ({{ maxAddableQty }} more available) </span>
+                    </div>
+
+                    <Button
+                        v-if="isInStock(product)"
+                        variant="primary"
+                        @click="addToCart"
+                        :disabled="isAtCartMax"
+                    >
+                        {{ isAtCartMax ? "Cart Full" : "Add to Cart" }}
+                    </Button>
                     <Button
                         v-if="authStore.currentUser?.admin"
                         variant="ghost"
@@ -383,6 +405,12 @@ onMounted(() => {
     border-left: 1px solid var(--border);
     border-right: 1px solid var(--border);
     line-height: 38px;
+}
+
+.cart-qty-info {
+    font-size: 13px;
+    color: var(--muted);
+    margin-right: 8px;
 }
 
 @media (max-width: 800px) {

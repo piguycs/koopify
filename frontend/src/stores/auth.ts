@@ -305,7 +305,7 @@ export const useAuthStore = defineStore("auth", {
             return await apiClient.post<OrderResponse>(
                 `/api/v1/admin/orders/${orderId}/poll`,
                 undefined,
-                { authToken: this.token }
+                { authToken: this.token },
             )
         },
     },
