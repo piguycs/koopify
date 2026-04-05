@@ -24,7 +24,9 @@ New users can be created in the frontend. An auto-generated admin user is also c
 
 ### Example dataset
 The `compose.yaml` file takes care of migrations. An example dataset of Gen1
-Pokemon cards can be used to fill the database with "products".
+Pokemon cards can be used to fill the database with "products". The docker
+compose manifest does also add this dataset to the database, however, it can
+also be manually added if so desired:
 
 ```sh
 cd example-dataset

@@ -72,6 +72,21 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
+  seed-data:
+    image: docker.io/library/python:3.14-alpine
+    working_dir: /app
+    volumes:
+      - ./example-dataset:/app
+    command: >
+      sh -c "
+      pip install --no-cache-dir -r requirements.txt &&
+      python3 insert_products.py --csv gen1.csv --db postgres://koopify:koopify@db:5432/koopify &&
+      python3 insert_categories.py --csv gen1.csv --db postgres://koopify:koopify@db:5432/koopify
+      "
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
 volumes:
   postgres_data:
