@@ -15,7 +15,7 @@ Docker Compose version 5.1.1
 
 ### Docker-Compose Endpoints
 - Frontend: <https://localhost:5173> (uses TLS)
-- Backend: <https://localhost:8080>
+- Backend: <http://localhost:8080>
 
 ### Credentials
 New users can be created in the frontend. An auto-generated admin user is also created:
